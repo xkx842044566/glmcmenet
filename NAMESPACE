@@ -1,0 +1,8 @@
+exportPattern("^[[:alpha:]]+")
+import(Rcpp)
+import(glmnet)
+import(hierNet)
+import(sparsenet)
+importFrom("stats", "median")
+importFrom("utils", "setTxtProgressBar", "txtProgressBar")
+useDynLib(glmcmenet, .registration = TRUE)
