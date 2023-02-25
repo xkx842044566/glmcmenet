@@ -91,7 +91,7 @@ cv.glmcmenet <- function (xme, xcme, y, nfolds = 10, var.names = NULL, nlambda.s
       }
     }
   }
-  max.lambda <- lambda0.cme(cbind(xme, xcme), yglm)
+  max.lambda <- lambda0.cme(cbind(xme, xcme), y)
   lambda.sib <- exp(seq(from = log(max.lambda), to = log(max.lambda *
                                                            lambda.min.ratio), length = nlambda.sib))
   lambda.cou <- exp(seq(from = log(max.lambda), to = log(max.lambda *
