@@ -23,7 +23,7 @@ glmcmenet <- function (xme, xcme, y, lambda.sib = exp(seq(from = log(max.lambda)
   xcme.sl[idx.constcme] <- 1
   ret <- cme(xme.sc, xcme.sc, y, lambda.sib, lambda.cou, gamma,
              tau, xme.sl, xcme.sl, beta0, act.vec, max.lambda, it.max,
-             3, 1, F)
+             it_warm=3, reset=1, screen_ind=F)
   # if (lambda.flg) {
   #   inter <- matrix(NA, nrow = length(lambda.sib), ncol = length(lambda.cou))
   # }

@@ -110,8 +110,21 @@ cv.glmcmenet <- function (xme, xcme, y, nfolds = 10, var.names = NULL, nlambda.s
   cvm.lambda.bst <- c()
   parms1.min <- c(median(lambda.sib), median(lambda.cou))
 
+  if (!identical(sort(unique(y)), 0:1)) y <- as.double(y==max(y))
   ## Resample folds
-  foldid = sample(rep(seq(nfolds), length = n))
+  ind1 <- which(y==1)
+  ind0 <- which(y==0)
+  n1 <- length(ind1)
+  n0 <- length(ind0)
+  fold1 <- 1:n1 %% nfolds
+  fold0 <- (n1 + 1:n0) %% nfolds
+  fold1[fold1==0] <- nfolds
+  fold0[fold0==0] <- nfolds
+  foldid <- double(n)
+  foldid[y==1] <- sample(fold1)
+  foldid[y==0] <- sample(fold0)
+
+  #foldid = sample(rep(seq(nfolds), length = n))
   if (nfolds < 3) {
     stop("nfolds must be bigger than 3; nfolds=10 recommended")
   }
