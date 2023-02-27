@@ -308,22 +308,13 @@ bool kkt(double inprod,  NumericVector cur_delta){
 
 
 //One run of coordinate descent
-
-struct coord_des_onerun_result {
-  bool chng_flag;
-  double inter;
-  double dev;
-};
-
-
-coord_des_onerun_result coord_des_onerun(int pme, int nn, NumericVector& lambda, NumericVector& cur_delta,
+bool coord_des_onerun(int pme, int nn, NumericVector& lambda, NumericVector& cur_delta,
                       bool dummy, double tau, double gamma,
                       vector<double>& X_me, vector<double>& X_cme, NumericVector& yy,
                       vector<double>& delta_sib, vector<double>& delta_cou,
                       vector<bool>& act_me, vector<bool>& act_cme, double inter,
                       vector<double>& beta_me, vector<double>& beta_cme,
                       vector<double>& eta, double nullDev){
-  coord_des_onerun_result result;
   bool chng_flag = false;
   double cur_beta = 0.0;
   double cur_inter = 0.0;
@@ -452,6 +443,13 @@ coord_des_onerun_result coord_des_onerun(int pme, int nn, NumericVector& lambda,
           if (yy[l]==0) dev = dev - log(1-mu[l]);
         }
 
+        // Check for saturation
+        if (dev/nullDev < .01) {
+          warning("Model saturated; exiting...");
+          break;
+        }
+
+
         //Update intercept
         xwr = crossprod(W, resid, nn, 0);
         xwx = sum(W,nn);
@@ -496,6 +494,9 @@ coord_des_onerun_result coord_des_onerun(int pme, int nn, NumericVector& lambda,
           chng_flag = true;
 
           if (fabs(beta_cme[cmeind]-cur_beta)*sqrt(v) > max_change) max_change = fabs(beta_cme[cmeind]-cur_beta)*sqrt(v);
+
+          // Check for convergence
+          if (max_change < 1e-6) break;
 
         }
 
@@ -593,10 +594,7 @@ coord_des_onerun_result coord_des_onerun(int pme, int nn, NumericVector& lambda,
       }
     }
   }
-  result.chng_flag = chng_flag;
-  result.inter = inter;
-  result.dev= dev;
-  return result;
+  return (chng_flag);
 
 }
 
@@ -825,11 +823,8 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy,
 
         //Active set reset for it_warm iterations
         for (int m=0; m<it_warm; m++){
-          coord_des_onerun_result result = coord_des_onerun(pme, nn, lambda, cur_delta, chng_flag, tau, gamma, X_me, X_cme, yy,
+          chng_flag = coord_des_onerun(pme, nn, lambda, cur_delta, chng_flag, tau, gamma, X_me, X_cme, yy,
                                        delta_sib, delta_cou, act_me, act_cme, inter, beta_me, beta_cme, eta, nullDev);
-          chng_flag = result.chng_flag;
-          dev_mat(a,b) = result.dev;
-          inter_mat(a,b)= result.inter;
         }
 
 
@@ -865,11 +860,8 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy,
 
           //Increment count and update flags
           it_inner ++;
-          coord_des_onerun_result result = coord_des_onerun(pme, nn, lambda, cur_delta, chng_flag, tau, gamma, X_me, X_cme, yy,
+          chng_flag = coord_des_onerun(pme, nn, lambda, cur_delta, chng_flag, tau, gamma, X_me, X_cme, yy,
                                        delta_sib, delta_cou, act_me, act_cme, inter, beta_me, beta_cme, eta,dev);
-          chng_flag = result.chng_flag;
-          inter_mat(a,b)= result.inter;
-          dev_mat(a,b) = result.dev;
 
           //Update cont flag for termination
           if ( (it_inner >= it_max_reset)||(!chng_flag) ){
@@ -903,6 +895,8 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy,
         betacount++;
       }
       nz(a,b) = betanz;
+      inter_mat(a,b)= inter;
+      dev_mat(a,b) = dev;
 
       //Copy deltas
       for (int k=0;k<pme;k++){
