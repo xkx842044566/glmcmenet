@@ -77,10 +77,10 @@ double fmax2 (double x, double y){
 
 // Pr(y=1) for binomial
 double pbinomial(double eta) {
-  if (eta > 10) {
-    return(1);
-  } else if (eta < -10) {
-    return(0);
+  if (eta > 16) {
+    return(0.9999);
+  } else if (eta < -16) {
+    return(0.0001);
   } else {
     return(exp(eta)/(1+exp(eta)));
   }
@@ -312,6 +312,7 @@ bool kkt(double inprod,  NumericVector cur_delta){
 struct coord_des_onerun_result {
   bool chng_flag;
   double inter;
+  double dev;
 };
 
 
@@ -321,7 +322,7 @@ coord_des_onerun_result coord_des_onerun(int pme, int nn, NumericVector& lambda,
                       vector<double>& delta_sib, vector<double>& delta_cou,
                       vector<bool>& act_me, vector<bool>& act_cme, double inter,
                       vector<double>& beta_me, vector<double>& beta_cme,
-                      vector<double>& eta, double dev){
+                      vector<double>& eta, double nullDev){
   coord_des_onerun_result result;
   bool chng_flag = false;
   double cur_beta = 0.0;
@@ -329,8 +330,9 @@ coord_des_onerun_result coord_des_onerun(int pme, int nn, NumericVector& lambda,
   double xwr = 0.0;
   double xwx = 0.0;
   double inprod = 0.0;
-  double v = 0.0;
+  double v = 0.25;
   double max_change = 0.0;
+  double dev = 0.0;
 
   vector<double> mu(nn);
   vector<double> W(nn);
@@ -346,13 +348,19 @@ coord_des_onerun_result coord_des_onerun(int pme, int nn, NumericVector& lambda,
 
       //Compute inner product and v
       inprod = 0.0;
-      v = 0.0;
+      v = 0.25;
       for (int k=0;k<nn;k++){
         mu[k] = pbinomial(eta[k]) ;
         W[k] = fmax2(mu[k]*(1-mu[k]),0.0001);
         resid[k] = (yy[k]-mu[k])/W[k];
         if (yy[k]==1) dev = dev - log(mu[k]);
         if (yy[k]==0) dev = dev - log(1-mu[k]);
+      }
+
+      // Check for saturation
+      if (dev/nullDev < .01) {
+        warning("Model saturated; exiting...");
+        break;
       }
 
       //Update intercept
@@ -403,13 +411,17 @@ coord_des_onerun_result coord_des_onerun(int pme, int nn, NumericVector& lambda,
         chng_flag = true;
 
         if (fabs(beta_me[j]-cur_beta)*sqrt(v) > max_change) max_change = fabs(beta_me[j]-cur_beta)*sqrt(v);
+
+        // Check for convergence
+        if (max_change < 1e-6) break;
+
       }
     }
   }
 
   cur_beta = 0.0;
   inprod = 0.0;
-  v = 0.0;
+  v = 0.25;
   //CD for CME effects
   for (int j=0;j<pme;j++){ //parent effect
     for (int k=0;k<(2*(pme-1));k++){ //conditioned effect
@@ -431,7 +443,7 @@ coord_des_onerun_result coord_des_onerun(int pme, int nn, NumericVector& lambda,
 
         //Compute inner product
         inprod = 0.0;
-        v = 0.0;
+        v = 0.25;
         for (int l=0;l<nn;l++){
           mu[l] = pbinomial(eta[l]) ;
           W[l] = fmax2(mu[l]*(1-mu[l]),0.0001);
@@ -583,6 +595,7 @@ coord_des_onerun_result coord_des_onerun(int pme, int nn, NumericVector& lambda,
   }
   result.chng_flag = chng_flag;
   result.inter = inter;
+  result.dev= dev;
   return result;
 
 }
@@ -655,6 +668,7 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy,
   arma::cube delta_cou_cube(pme,niter_1,niter_2); //deltas to return
   arma::mat nz(niter_1,niter_2);
   arma::mat inter_mat(niter_1,niter_2); //intercept to return
+  arma::mat dev_mat(niter_1,niter_2); //deviation to return
   arma::mat beta_mat(pme+pcme,niter_1);
   arma::mat delta_sib_mat(pme,niter_1);
   arma::mat delta_cou_mat(pme,niter_1);
@@ -715,7 +729,6 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy,
     resid[i] = (yy(i) - ymean)/W[i];
     nullDev -= 2*yy(i)*log(ymean) + 2*(1-yy(i))*log(1-ymean);
   }
-  dev=nullDev;
 
   vector<bool> kkt_v_me(pme,true);
   vector<bool> kkt_v_cme(pcme,true); //KKT checks
@@ -754,7 +767,7 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy,
           eta[i] = log(ymean/(1-ymean)); //
           W[i] = fmax2(ymean*(1-ymean),0.0001);
           resid[i] = (yy(i) - ymean)/W[i];
-          dev = dev - 2*yy(i)*log(ymean) + 2*(1-yy(i))*log(1-ymean);
+          nullDev -= - 2*yy(i)*log(ymean) + 2*(1-yy(i))*log(1-ymean);
         }
         num_act = 0;
         for (int i=0;i<pme;i++){//reset active flag
@@ -787,7 +800,6 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy,
         resid[i] = (yy(i) - ymean)/W[i];
         nullDev -= 2*yy(i)*log(ymean) + 2*(1-yy(i))*log(1-ymean);
       }
-      dev=nullDev;
 
       //Recompute deltas
       fill(delta_sib.begin(),delta_sib.end(),lambda[0]);
@@ -814,8 +826,9 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy,
         //Active set reset for it_warm iterations
         for (int m=0; m<it_warm; m++){
           coord_des_onerun_result result = coord_des_onerun(pme, nn, lambda, cur_delta, chng_flag, tau, gamma, X_me, X_cme, yy,
-                                       delta_sib, delta_cou, act_me, act_cme, inter, beta_me, beta_cme, eta, dev);
+                                       delta_sib, delta_cou, act_me, act_cme, inter, beta_me, beta_cme, eta, nullDev);
           chng_flag = result.chng_flag;
+          dev_mat(a,b) = result.dev;
           inter_mat(a,b)= result.inter;
         }
 
@@ -855,6 +868,7 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy,
                                        delta_sib, delta_cou, act_me, act_cme, inter, beta_me, beta_cme, eta,dev);
           chng_flag = result.chng_flag;
           inter_mat(a,b)= result.inter;
+          dev_mat(a,b) = result.dev;
 
           //Update cont flag for termination
           if ( (it_inner >= it_max_reset)||(!chng_flag) ){
@@ -927,6 +941,7 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy,
     for (int a=0; a<niter_1; a++){ //iterate over siblings...
       //Rescale betas to original scale
       inter_mat(a,b) = inter_mat(a,b);
+      dev_mat(a,b) = dev_mat(a,b);
       for (int k=0;k<pme;k++){
         // beta_cube(k,a,b) = beta_cube(k,a,b);
         beta_cube(k,a,b) = beta_cube(k,a,b)/XX_me_sl(k);
@@ -941,7 +956,8 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy,
   return (List::create(Named("coefficients") = beta_cube,
                        Named("intercept") = inter_mat,
                        Named("residuals") = resid_cube,
-                       // Named("nzero") = nz,
+                       Named("deviation") = dev_mat,
+                       //Named("nzero") = nz,
                        Named("lambda_sib") = lambda_sib_vec,
                        Named("lambda_cou") = lambda_cou_vec,
                        Named("act") = scr_cube,
