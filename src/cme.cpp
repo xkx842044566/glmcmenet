@@ -833,6 +833,7 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy,
         }
 
 
+
         //Update active set
         int num_act = 0;
         for (int j=0;j<pme;j++){
