@@ -12,15 +12,16 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // mcp
-double mcp(double beta, double lambda, double gamma);
-RcppExport SEXP _glmcmenet_mcp(SEXP betaSEXP, SEXP lambdaSEXP, SEXP gammaSEXP) {
+double mcp(double beta, double v, double lambda, double gamma);
+RcppExport SEXP _glmcmenet_mcp(SEXP betaSEXP, SEXP vSEXP, SEXP lambdaSEXP, SEXP gammaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< double >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< double >::type v(vSEXP);
     Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
     Rcpp::traits::input_parameter< double >::type gamma(gammaSEXP);
-    rcpp_result_gen = Rcpp::wrap(mcp(beta, lambda, gamma));
+    rcpp_result_gen = Rcpp::wrap(mcp(beta, v, lambda, gamma));
     return rcpp_result_gen;
 END_RCPP
 }

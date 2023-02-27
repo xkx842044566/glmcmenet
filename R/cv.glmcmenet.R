@@ -8,7 +8,7 @@ cv.glmcmenet <- function (xme, xcme, y, nfolds = 10, var.names = NULL, nlambda.s
   n <- nrow(xme)
   xmat <- cbind(xme, xcme)
   min.tau <- max.tau * tau.min.ratio
-  min.gamma <- max(max(apply(xmat,2,function(x){8*n/sum(x^2)})),1/(0.125 - max.tau) + 0.001)
+  min.gamma <- max(max(apply(xmat,2,function(x){8*n/sum(x^2)}))+ 0.001,1/(0.125 - max.tau) + 0.001)
   act.vec <- rep(-1, ncol(xme) + ncol(xcme))
   if (warm.str == "lasso") {
     # if (family == "gaussian"){

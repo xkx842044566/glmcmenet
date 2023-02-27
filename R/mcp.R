@@ -1,4 +1,4 @@
-mcp <- function (beta, lambda, gamma)
+mcp <- function (beta, v, lambda, gamma)
 {
-  .Call(`_glmcmenet_mcp`, beta, lambda, gamma)
+  .Call(`_glmcmenet_mcp`, beta, v, lambda, gamma)
 }
