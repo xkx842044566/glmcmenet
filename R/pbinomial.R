@@ -1,6 +1,6 @@
 pbinomial <- function (eta){
-  if(is.na(eta)){eta}
-  if (eta > 16) {
+  if(is.na(eta)) {0.5
+  } else if (eta > 16) {
     return(0.9999);
   } else if (eta < -16) {
     return(0.0001);

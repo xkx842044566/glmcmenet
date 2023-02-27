@@ -1,6 +1,6 @@
-cv.glmcmenet <- function (xme, xcme, y, nfolds = 10, var.names = NULL, nlambda.sib = 20,
-          nlambda.cou = 20, lambda.min.ratio = 1e-06, ngamma = 10,
-          max.gamma = 150, ntau = 20, max.tau = 0.01, tau.min.ratio = 0.01,
+cv.glmcmenet <- function (xme, xcme, y, nfolds = 10, var.names = NULL, nlambda.sib = 10,
+          nlambda.cou = 10, lambda.min.ratio = 1e-06, ngamma = 10,
+          max.gamma = 150, ntau = 10, max.tau = 0.01, tau.min.ratio = 0.01,
           it.max = 250, it.max.cv = 25, warm.str = "lasso")
 {
   pme <- ncol(xme)
