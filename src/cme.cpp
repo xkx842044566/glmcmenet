@@ -355,8 +355,9 @@ bool coord_des_onerun(int pme, int nn, NumericVector& lambda, NumericVector& cur
       for (int i=0; i<nn; i++) {
         resid[i] -= inter - cur_inter;
         eta[i] += inter - cur_inter;
+        mu = pbinomial(eta[i]) ;
+        W[i] = fmax2(mu*(1-mu),0.0001);
       }
-      max_change = fabs(inter - cur_inter)*xwx/((double)nn);
 
       //CD for main effects
       for (int j=0;j<pme;j++){
@@ -400,11 +401,6 @@ bool coord_des_onerun(int pme, int nn, NumericVector& lambda, NumericVector& cur
 
         //Update flag
         chng_flag = true;
-
-        if (fabs(beta_me[j]-cur_beta)*sqrt(v) > max_change) max_change = fabs(beta_me[j]-cur_beta)*sqrt(v);
-
-        // Check for convergence
-        if (max_change < 1e-6) break;
 
       }
     }
@@ -495,11 +491,6 @@ bool coord_des_onerun(int pme, int nn, NumericVector& lambda, NumericVector& cur
 
           //Update flag
           chng_flag = true;
-
-          if (fabs(beta_cme[cmeind]-cur_beta)*sqrt(v) > max_change) max_change = fabs(beta_cme[cmeind]-cur_beta)*sqrt(v);
-
-          // Check for convergence
-          if (max_change < 1e-6) break;
 
         }
 
