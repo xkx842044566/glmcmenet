@@ -322,37 +322,31 @@ bool coord_des_onerun(int pme, int nn, NumericVector& lambda, NumericVector& cur
   double xwx = 0.0;
   double inprod = 0.0;
   double v = 0.25;
+  double mu = 0.0;
   double max_change = 0.0;
   double dev = 0.0;
 
-  vector<double> mu(nn);
   vector<double> W(nn);
   vector<double> resid(nn);
 
-
-  //CD for main effects
-  for (int j=0;j<pme;j++){
-    //Only update if active
-    if (act_me[j]){
-      cur_beta = beta_me[j];
       cur_inter= inter;
 
       //Compute inner product and v
       inprod = 0.0;
       v = 0.25;
       for (int k=0;k<nn;k++){
-        mu[k] = pbinomial(eta[k]) ;
-        W[k] = fmax2(mu[k]*(1-mu[k]),0.0001);
-        resid[k] = (yy[k]-mu[k])/W[k];
-        if (yy[k]==1) dev = dev - log(mu[k]);
-        if (yy[k]==0) dev = dev - log(1-mu[k]);
+        mu = pbinomial(eta[k]) ;
+        W[k] = fmax2(mu*(1-mu),0.0001);
+        resid[k] = (yy[k]-mu)/W[k];
+        if (yy[k]==1) dev = dev - log(mu);
+        if (yy[k]==0) dev = dev - log(1-mu);
       }
 
-      // Check for saturation
-      if (dev/nullDev < .01) {
-        warning("Model saturated; exiting...");
-        break;
-      }
+      // // Check for saturation
+      // if (dev/nullDev < .01) {
+      //   warning("Model saturated; exiting...");
+      //   break;
+      // }
 
       //Update intercept
       xwr = crossprod(W, resid, nn, 0);
@@ -363,6 +357,12 @@ bool coord_des_onerun(int pme, int nn, NumericVector& lambda, NumericVector& cur
         eta[i] += inter - cur_inter;
       }
       max_change = fabs(inter - cur_inter)*xwx/((double)nn);
+
+      //CD for main effects
+      for (int j=0;j<pme;j++){
+      //Only update if active
+      if (act_me[j]){
+        cur_beta = beta_me[j];
 
       // Updata covariates
       xwr = wcrossprod(X_me, resid, W, nn, j);
@@ -385,8 +385,8 @@ bool coord_des_onerun(int pme, int nn, NumericVector& lambda, NumericVector& cur
         for (int k=0;k<nn;k++){
           resid[k] = resid[k] - X_me[j*nn+k]*(beta_me[j]-cur_beta);
           eta[k] = eta[k] + X_me[j*nn+k]*(beta_me[j]-cur_beta);
-          mu[k] = pbinomial(eta[k]) ;
-          W[k] = fmax2(mu[k]*(1-mu[k]),0.0001);
+          mu = pbinomial(eta[k]) ;
+          W[k] = fmax2(mu*(1-mu),0.0001);
           //v += (X_me[j*nn+k]*W[k]*X_me[j*nn+k])/((double)nn);
         }
         xwx = wsqsum(X_me, W, nn, j);
@@ -413,6 +413,9 @@ bool coord_des_onerun(int pme, int nn, NumericVector& lambda, NumericVector& cur
   cur_beta = 0.0;
   inprod = 0.0;
   v = 0.25;
+
+
+
   //CD for CME effects
   for (int j=0;j<pme;j++){ //parent effect
     for (int k=0;k<(2*(pme-1));k++){ //conditioned effect
@@ -426,7 +429,7 @@ bool coord_des_onerun(int pme, int nn, NumericVector& lambda, NumericVector& cur
           condind ++;
         }
         cur_beta = beta_cme[cmeind]; //beta_cme ordered by parent effects, then condition
-        cur_inter = inter;
+        //cur_inter= inter;
 
         //Update cur_delta
         cur_delta[0] = delta_sib[j];
@@ -435,30 +438,30 @@ bool coord_des_onerun(int pme, int nn, NumericVector& lambda, NumericVector& cur
         //Compute inner product
         inprod = 0.0;
         v = 0.25;
-        for (int l=0;l<nn;l++){
-          mu[l] = pbinomial(eta[l]) ;
-          W[l] = fmax2(mu[l]*(1-mu[l]),0.0001);
-          resid[l] = (yy[l]-mu[l])/W[l];
-          if (yy[l]==1) dev = dev - log(mu[l]);
-          if (yy[l]==0) dev = dev - log(1-mu[l]);
-        }
+        // for (int l=0;l<nn;l++){
+        //   mu = pbinomial(eta[l]) ;
+        //   W[l] = fmax2(mu*(1-mu),0.0001);
+        //   resid[l] = (yy[l]-mu)/W[l];
+        //   if (yy[l]==1) dev = dev - log(mu);
+        //   if (yy[l]==0) dev = dev - log(1-mu);
+        // }
+        //
+        // // Check for saturation
+        // if (dev/nullDev < .01) {
+        //   warning("Model saturated; exiting...");
+        //   break;
+        // }
 
-        // Check for saturation
-        if (dev/nullDev < .01) {
-          warning("Model saturated; exiting...");
-          break;
-        }
 
-
-        //Update intercept
-        xwr = crossprod(W, resid, nn, 0);
-        xwx = sum(W,nn);
-        inter = xwr/xwx + cur_inter;
-        for (int i=0; i<nn; i++) {
-          resid[i] -= inter - cur_inter;
-          eta[i] += inter - cur_inter;
-        }
-        max_change = fabs(inter - cur_inter)*xwx/((double)nn);
+        // //Update intercept
+        // xwr = crossprod(W, resid, nn, 0);
+        // xwx = sum(W,nn);
+        // inter = xwr/xwx + cur_inter;
+        // for (int i=0; i<nn; i++) {
+        //   resid[i] -= inter - cur_inter;
+        //   eta[i] += inter - cur_inter;
+        // }
+        // max_change = fabs(inter - cur_inter)*xwx/((double)nn);
 
         // Updata covariates
         xwr = wcrossprod(X_cme, resid, W, nn, cmeind);
@@ -477,8 +480,8 @@ bool coord_des_onerun(int pme, int nn, NumericVector& lambda, NumericVector& cur
           for (int ll=0;ll<nn;ll++){
             resid[ll] = resid[ll] - X_cme[cmeind*nn+ll]*(beta_me[cmeind]-cur_beta);
             eta[ll] = eta[ll] + X_cme[cmeind*nn+ll]*(beta_me[ll]-cur_beta);
-            mu[ll] = pbinomial(eta[ll]) ;
-            W[ll] = fmax2(mu[ll]*(1-mu[ll]),0.0001);
+            mu = pbinomial(eta[ll]) ;
+            W[ll] = fmax2(mu*(1-mu),0.0001);
             //v += (X_me[j*nn+k]*W[k]*X_me[j*nn+k])/((double)nn);
           }
           xwx = wsqsum(X_me, W, nn, cmeind);
