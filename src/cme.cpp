@@ -352,8 +352,8 @@ bool coord_des_onerun(int pme, int nn, NumericVector& lambda, NumericVector& cur
      for (int i=0; i<nn; i++) {
        resid[i] -= inter - cur_inter;
        eta[i] += inter - cur_inter;
-       mu = pbinomial(eta[i]) ;
-       W[i] = fmax2(mu*(1-mu),0.0001);
+       //mu = pbinomial(eta[i]) ;
+       //W[i] = fmax2(mu*(1-mu),0.0001);
      }
 
     //CD for main effects
@@ -362,8 +362,8 @@ bool coord_des_onerun(int pme, int nn, NumericVector& lambda, NumericVector& cur
     if (act_me[j]){
       cur_beta = beta_me[j];
 
-      inprod = 0.0;
-      v = 0.25;
+      //inprod = 0.0;
+      //v = 0.25;
       // Updata covariates
       xwr = wcrossprod(X_me, resid, W, nn, j);
       xwx = wsqsum(X_me, W, nn, j);
@@ -385,8 +385,8 @@ bool coord_des_onerun(int pme, int nn, NumericVector& lambda, NumericVector& cur
         for (int k=0;k<nn;k++){
           resid[k] = resid[k] - X_me[j*nn+k]*(beta_me[j]-cur_beta);
           eta[k] = eta[k] + X_me[j*nn+k]*(beta_me[j]-cur_beta);
-          mu = pbinomial(eta[k]) ;
-          W[k] = fmax2(mu*(1-mu),0.0001);
+          //mu = pbinomial(eta[k]) ;
+          //W[k] = fmax2(mu*(1-mu),0.0001);
           //v += (X_me[j*nn+k]*W[k]*X_me[j*nn+k])/((double)nn);
         }
         // xwx = wsqsum(X_me, W, nn, j);
@@ -431,8 +431,8 @@ bool coord_des_onerun(int pme, int nn, NumericVector& lambda, NumericVector& cur
         cur_delta[1] = delta_cou[condind];
 
         //Compute inner product
-        inprod = 0.0;
-        v = 0.25;
+        //inprod = 0.0;
+        //v = 0.25;
         // for (int l=0;l<nn;l++){
         //   mu = pbinomial(eta[l]) ;
         //   W[l] = fmax2(mu*(1-mu),0.0001);
@@ -474,9 +474,9 @@ bool coord_des_onerun(int pme, int nn, NumericVector& lambda, NumericVector& cur
           //Update resid eta, mu, weight
           for (int ll=0;ll<nn;ll++){
             resid[ll] = resid[ll] - X_cme[cmeind*nn+ll]*(beta_cme[cmeind]-cur_beta);
-            eta[ll] = eta[ll] + X_cme[cmeind*nn+ll]*(beta_cme[ll]-cur_beta);
-            mu = pbinomial(eta[ll]) ;
-            W[ll] = fmax2(mu*(1-mu),0.0001);
+            eta[ll] = eta[ll] + X_cme[cmeind*nn+ll]*(beta_cme[cmeind]-cur_beta);
+            //mu = pbinomial(eta[ll]) ;
+            //W[ll] = fmax2(mu*(1-mu),0.0001);
             //v += (X_me[j*nn+k]*W[k]*X_me[j*nn+k])/((double)nn);
           }
           // xwx = wsqsum(X_cme, W, nn, cmeind);
@@ -716,8 +716,8 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy,
   inter = log(ymean/(1-ymean));
   for (int i=0;i<nn;i++){
     eta[i] = log(ymean/(1-ymean)); //
-    W[i] = fmax2(ymean*(1-ymean),0.0001);
-    resid[i] = (yy(i) - ymean)/W[i];
+    //W[i] = fmax2(ymean*(1-ymean),0.0001);
+    //resid[i] = (yy(i) - ymean)/W[i];
     nullDev -= 2*yy(i)*log(ymean) + 2*(1-yy(i))*log(1-ymean);
   }
 
@@ -756,9 +756,9 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy,
         inter= log(ymean/(1-ymean));
         for (int i=0;i<nn;i++){//reset residuals
           eta[i] = log(ymean/(1-ymean)); //
-          W[i] = fmax2(ymean*(1-ymean),0.0001);
-          resid[i] = (yy(i) - ymean)/W[i];
-          nullDev -= - 2*yy(i)*log(ymean) + 2*(1-yy(i))*log(1-ymean);
+          //W[i] = fmax2(ymean*(1-ymean),0.0001);
+          //resid[i] = (yy(i) - ymean)/W[i];
+          nullDev -=  2*yy(i)*log(ymean) + 2*(1-yy(i))*log(1-ymean);
         }
         num_act = 0;
         for (int i=0;i<pme;i++){//reset active flag
@@ -787,8 +787,8 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy,
       inter = log(ymean/(1-ymean));
       for (int i=0;i<nn;i++){//reset residuals
         eta[i] = log(ymean/(1-ymean)); //
-        W[i] = fmax2(ymean*(1-ymean),0.0001);
-        resid[i] = (yy(i) - ymean)/W[i];
+        //W[i] = fmax2(ymean*(1-ymean),0.0001);
+        //resid[i] = (yy(i) - ymean)/W[i];
         nullDev -= 2*yy(i)*log(ymean) + 2*(1-yy(i))*log(1-ymean);
       }
 
@@ -856,7 +856,7 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy,
           //Increment count and update flags
           it_inner ++;
           chng_flag = coord_des_onerun(pme, nn, lambda, cur_delta, chng_flag, tau, gamma, X_me, X_cme, yy,
-                                       delta_sib, delta_cou, act_me, act_cme, inter, beta_me, beta_cme, eta,dev);
+                                       delta_sib, delta_cou, act_me, act_cme, inter, beta_me, beta_cme, eta,nullDev);
 
           //Update cont flag for termination
           if ( (it_inner >= it_max_reset)||(!chng_flag) ){

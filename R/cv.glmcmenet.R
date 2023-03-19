@@ -20,7 +20,7 @@ cv.glmcmenet <- function (xme, xcme, y, nfolds = 10, var.names = NULL, nlambda.s
     #   act.vec[lasind] <- 1
     # }
     # if (family == "binomial"){
-    cvlas <- cv.glmnet(cbind(xme, xcme), y,family = "binomial",type.measure = "class")
+    cvlas <- cv.glmnet(cbind(xme, xcme), y,family = "binomial",type.measure = "deviance")
     lasfit <- glmnet(cbind(xme, xcme), y,family = "binomial")
     lasind <- which(lasfit$beta[, which(cvlas$lambda ==
                                           cvlas$lambda.1se)] != 0)
@@ -145,7 +145,7 @@ cv.glmcmenet <- function (xme, xcme, y, nfolds = 10, var.names = NULL, nlambda.s
                      tau = tau_vec, act.vec = act.vec, max.lambda = max.lambda,
                      it.max = it.max.cv)
     xtest <- xmat[which, , drop = F]
-    predmat[which, , ] <- ifelse(predictcme(fitobj, xtest)$mu>0.5,1,0)!=y[which]
+    predmat[which, , ] <- -2*(y[which]*log(predictcme(fitobj, xtest)$mu)+(1-y[which])*log(1-predictcme(fitobj, xtest)$mu))
 
   }
   cat("\n")
@@ -181,7 +181,7 @@ cv.glmcmenet <- function (xme, xcme, y, nfolds = 10, var.names = NULL, nlambda.s
                      tau = parms2.min[2], act.vec = act.vec, max.lambda = max.lambda,
                      it.max = it.max.cv)
     xtest <- xmat[which, , drop = F]
-    predmat[which, , ] <- ifelse(predictcme(fitobj, xtest)$mu>0.5,1,0)!=y[which]
+    predmat[which, , ] <- -2*(y[which]*log(predictcme(fitobj, xtest)$mu)+(1-y[which])*log(1-predictcme(fitobj, xtest)$mu))
       #ifelse(predictcme(fitobj, xtest)$mu>0.5,1,0)!=y[which]
       #-2*(y[which]*log(predictcme(fitobj, xtest)$mu)+(1-y[which])*log(1-predictcme(fitobj, xtest)$mu))
   }
