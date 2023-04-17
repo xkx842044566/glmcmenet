@@ -212,7 +212,7 @@ cv.glmcmenet <- function (xme, xcme, y, nfolds = 10, var.names = NULL, nlambda.s
   obj$select.names <- var.names[obj$select.idx]
 
   #refit model based on selected variables
-  refit <- glm(y~cbind(xme,xcme)[,obj$select.idx],family="binomial")
+  refit <- glm(y~.,data=as.data.frame(cbind(cbind(xme,xcme)[,obj$select.idx],y)), family="binomial")
   obj$cme.refit <- refit
   #obj$class.err.rate<-mean(ifelse(refit$fitted.values>0.5,1,0)!=y)
 
