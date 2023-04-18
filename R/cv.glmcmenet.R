@@ -1,7 +1,7 @@
 cv.glmcmenet <- function (xme, xcme, y, nfolds = 10, var.names = NULL, nlambda.sib = 10,
           nlambda.cou = 10, lambda.min.ratio = 1e-06, ngamma = 10,
           max.gamma = 150, ntau = 10, max.tau = 0.01, tau.min.ratio = 0.01,
-          it.max = 250, it.max.cv = 25, warm.str = "lasso")
+          it.max = 250, it.max.cv = 25, type.measure=c("deviance","class"),warm.str = "lasso")
 {
   pme <- ncol(xme)
   pcme <- ncol(xcme)
@@ -145,7 +145,11 @@ cv.glmcmenet <- function (xme, xcme, y, nfolds = 10, var.names = NULL, nlambda.s
                      tau = tau_vec, act.vec = act.vec, max.lambda = max.lambda,
                      it.max = it.max.cv)
     xtest <- xmat[which, , drop = F]
-    predmat[which, , ] <- ifelse(predictcme(fitobj, xtest)$mu>0.5,1,0)!=y[which]
+    if(type.measure=="deviance"){
+      predmat[which, , ] <- -2*(y[which]*log(predictcme(fitobj, xtest)$mu)+(1-y[which])*log(1-predictcme(fitobj, xtest)$mu))
+    }else if(type.measure=="class"){
+      predmat[which, , ] <- ifelse(predictcme(fitobj, xtest)$mu>0.5,1,0)!=y[which]
+    }
 
   }
   cat("\n")
@@ -181,9 +185,11 @@ cv.glmcmenet <- function (xme, xcme, y, nfolds = 10, var.names = NULL, nlambda.s
                      tau = parms2.min[2], act.vec = act.vec, max.lambda = max.lambda,
                      it.max = it.max.cv)
     xtest <- xmat[which, , drop = F]
-    predmat[which, , ] <- ifelse(predictcme(fitobj, xtest)$mu>0.5,1,0)!=y[which]
-      #ifelse(predictcme(fitobj, xtest)$mu>0.5,1,0)!=y[which]
-      #-2*(y[which]*log(predictcme(fitobj, xtest)$mu)+(1-y[which])*log(1-predictcme(fitobj, xtest)$mu))
+    if(type.measure=="deviance"){
+      predmat[which, , ] <- -2*(y[which]*log(predictcme(fitobj, xtest)$mu)+(1-y[which])*log(1-predictcme(fitobj, xtest)$mu))
+    }else if(type.measure=="class"){
+      predmat[which, , ] <- ifelse(predictcme(fitobj, xtest)$mu>0.5,1,0)!=y[which]
+    }
   }
   cat("\n")
   cvm.lambda <- apply(predmat, c(2, 3), mean)
