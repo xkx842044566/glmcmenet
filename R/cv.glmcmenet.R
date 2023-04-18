@@ -145,7 +145,7 @@ cv.glmcmenet <- function (xme, xcme, y, nfolds = 10, var.names = NULL, nlambda.s
                      tau = tau_vec, act.vec = act.vec, max.lambda = max.lambda,
                      it.max = it.max.cv)
     xtest <- xmat[which, , drop = F]
-    predmat[which, , ] <- -2*(y[which]*log(predictcme(fitobj, xtest)$mu)+(1-y[which])*log(1-predictcme(fitobj, xtest)$mu))
+    predmat[which, , ] <- ifelse(predictcme(fitobj, xtest)$mu>0.5,1,0)!=y[which]
 
   }
   cat("\n")
@@ -181,7 +181,7 @@ cv.glmcmenet <- function (xme, xcme, y, nfolds = 10, var.names = NULL, nlambda.s
                      tau = parms2.min[2], act.vec = act.vec, max.lambda = max.lambda,
                      it.max = it.max.cv)
     xtest <- xmat[which, , drop = F]
-    predmat[which, , ] <- -2*(y[which]*log(predictcme(fitobj, xtest)$mu)+(1-y[which])*log(1-predictcme(fitobj, xtest)$mu))
+    predmat[which, , ] <- ifelse(predictcme(fitobj, xtest)$mu>0.5,1,0)!=y[which]
       #ifelse(predictcme(fitobj, xtest)$mu>0.5,1,0)!=y[which]
       #-2*(y[which]*log(predictcme(fitobj, xtest)$mu)+(1-y[which])*log(1-predictcme(fitobj, xtest)$mu))
   }
