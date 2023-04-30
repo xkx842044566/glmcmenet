@@ -124,11 +124,11 @@ cv.glmcmenet <- function (xme, xcme, y, nfolds = 10, var.names = NULL, nlambda.s
   # foldid[y==1] <- sample(fold1)
   # foldid[y==0] <- sample(fold0)
 
+repeat{
   foldid = sample(rep(seq(nfolds), length = n))
   if (nfolds < 3) {
     stop("nfolds must be bigger than 3; nfolds=10 recommended")
   }
-  beta0 <- rep(0, ncol(xme) + ncol(xcme))
 
   ## (1) Tuning gammas and tau:
   predmat = array(NA, c(n, length(tau_vec), length(gamma_vec)))
@@ -215,7 +215,13 @@ cv.glmcmenet <- function (xme, xcme, y, nfolds = 10, var.names = NULL, nlambda.s
   obj$select.idx <- which(fitall$coefficients[, which(lambda.sib ==
                                                         obj$params[1]), which(lambda.cou == obj$params[2])] !=
                             0)
+  if(length(obj$select.idx)>0){
+    break
+  }
+}
+
   obj$select.names <- var.names[obj$select.idx]
+
 
   #refit model based on selected variables
   temp<-cbind(cbind(xme,xcme)[,obj$select.idx],y)
