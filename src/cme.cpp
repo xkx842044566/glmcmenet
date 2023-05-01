@@ -312,7 +312,7 @@ bool coord_des_onerun(int pme, int nn, NumericVector& lambda, NumericVector& cur
                       bool dummy, double tau, double gamma,
                       vector<double>& X_me, vector<double>& X_cme, NumericVector& yy,
                       vector<double>& delta_sib, vector<double>& delta_cou,
-                      vector<bool>& act_me, vector<bool>& act_cme, double inter,
+                      vector<bool>& act_me, vector<bool>& act_cme, double& inter,
                       vector<double>& beta_me, vector<double>& beta_cme,
                       vector<double>& eta, double nullDev){
   bool chng_flag = false;

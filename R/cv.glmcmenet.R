@@ -1,14 +1,14 @@
 cv.glmcmenet <- function (xme, xcme, y, nfolds = 10, var.names = NULL, nlambda.sib = 10,
           nlambda.cou = 10, lambda.min.ratio = 1e-06, ngamma = 10,
           max.gamma = 150, ntau = 10, max.tau = 0.01, tau.min.ratio = 0.01,
-          it.max = 250, it.max.cv = 25, type.measure=c("deviance","class"),warm.str = "lasso")
+          it.max = 250, it.max.cv = 25, type.measure="deviance",warm.str = "lasso")
 {
   pme <- ncol(xme)
   pcme <- ncol(xcme)
   n <- nrow(xme)
   xmat <- cbind(xme, xcme)
   min.tau <- max.tau * tau.min.ratio
-  min.gamma <- max(max(apply(xmat,2,function(x){8*n/sum(x^2)}))+ 0.001,1/(0.125 - max.tau) + 0.001)
+  min.gamma <- max(max(apply(xmat,2,function(x){8*nrow(xmat)/sum(x^2)}))+ 0.001,1/(0.125 - min.tau) + 0.001)
   act.vec <- rep(-1, ncol(xme) + ncol(xcme))
   if (warm.str == "lasso") {
     # if (family == "gaussian"){
@@ -112,20 +112,21 @@ cv.glmcmenet <- function (xme, xcme, y, nfolds = 10, var.names = NULL, nlambda.s
 
   #if (!identical(sort(unique(y)), 0:1)) y <- as.double(y==max(y))
   ## Resample folds
-  # ind1 <- which(y==1)
-  # ind0 <- which(y==0)
-  # n1 <- length(ind1)
-  # n0 <- length(ind0)
-  # fold1 <- 1:n1 %% nfolds
-  # fold0 <- (n1 + 1:n0) %% nfolds
-  # fold1[fold1==0] <- nfolds
-  # fold0[fold0==0] <- nfolds
-  # foldid <- double(n)
-  # foldid[y==1] <- sample(fold1)
-  # foldid[y==0] <- sample(fold0)
-
 repeat{
-  foldid = sample(rep(seq(nfolds), length = n))
+
+  ind1 <- which(yglm==1)
+  ind0 <- which(yglm==0)
+  n1 <- length(ind1)
+  n0 <- length(ind0)
+  fold1 <- 1:n1 %% nfolds
+  fold0 <- (n1 + 1:n0) %% nfolds
+  fold1[fold1==0] <- nfolds
+  fold0[fold0==0] <- nfolds
+  foldid <- double(n)
+  foldid[yglm==1] <- sample(fold1)
+  foldid[yglm==0] <- sample(fold0)
+
+  #foldid = sample(rep(seq(nfolds), length = n))
   if (nfolds < 3) {
     stop("nfolds must be bigger than 3; nfolds=10 recommended")
   }
