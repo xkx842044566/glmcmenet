@@ -112,7 +112,7 @@ cv.glmcmenet <- function (xme, xcme, y, nfolds = 10, var.names = NULL, nlambda.s
 
   #if (!identical(sort(unique(y)), 0:1)) y <- as.double(y==max(y))
   ## Resample folds
-repeat{
+  ## repeat{
 
   ind1 <- which(yglm==1)
   ind0 <- which(yglm==0)
@@ -216,10 +216,10 @@ repeat{
   obj$select.idx <- which(fitall$coefficients[, which(lambda.sib ==
                                                         obj$params[1]), which(lambda.cou == obj$params[2])] !=
                             0)
-  if(length(obj$select.idx)>0){
-    break
-  }
-}
+  #if(length(obj$select.idx)>0){
+  #  break
+  #}
+#}
 
   obj$select.names <- var.names[obj$select.idx]
 
