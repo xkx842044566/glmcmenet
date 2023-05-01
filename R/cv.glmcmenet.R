@@ -114,8 +114,8 @@ cv.glmcmenet <- function (xme, xcme, y, nfolds = 10, var.names = NULL, nlambda.s
   ## Resample folds
   ## repeat{
 
-  ind1 <- which(yglm==1)
-  ind0 <- which(yglm==0)
+  ind1 <- which(y==1)
+  ind0 <- which(y==0)
   n1 <- length(ind1)
   n0 <- length(ind0)
   fold1 <- 1:n1 %% nfolds
@@ -123,8 +123,8 @@ cv.glmcmenet <- function (xme, xcme, y, nfolds = 10, var.names = NULL, nlambda.s
   fold1[fold1==0] <- nfolds
   fold0[fold0==0] <- nfolds
   foldid <- double(n)
-  foldid[yglm==1] <- sample(fold1)
-  foldid[yglm==0] <- sample(fold0)
+  foldid[y==1] <- sample(fold1)
+  foldid[y==0] <- sample(fold0)
 
   #foldid = sample(rep(seq(nfolds), length = n))
   if (nfolds < 3) {
