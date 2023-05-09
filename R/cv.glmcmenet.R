@@ -1,7 +1,7 @@
 cv.glmcmenet <- function (xme, xcme, y, nfolds = 10, var.names = NULL, nlambda.sib = 10,
           nlambda.cou = 10, lambda.min.ratio = 1e-06, ngamma = 10,
           max.gamma = 150, ntau = 10, max.tau = 0.01, tau.min.ratio = 0.01,
-          it.max = 250, it.max.cv = 25, type.measure="deviance",warm.str = "lasso")
+          it.max = 250, it.max.cv = 25, type.measure="deviance",warm.str = c("lasso","hierNet"))
 {
   pme <- ncol(xme)
   pcme <- ncol(xcme)
@@ -39,7 +39,7 @@ cv.glmcmenet <- function (xme, xcme, y, nfolds = 10, var.names = NULL, nlambda.s
   else if (warm.str == "hierNet") {
     ## need to change later
     act.vec <- rep(-1, ncol(xme) + ncol(xcme))
-    warm.hn <- hierNet.path(xme, y)
+    warm.hn <- hierNet.logistic.path(xme, y)
     warm.cv <- hierNet.cv(warm.hn, xme, y)
     l.opt <- which(warm.hn$lamlist == warm.cv$lamhat.1se)
     me.sel <- (warm.hn$bp - warm.hn$bn)[, l.opt]
