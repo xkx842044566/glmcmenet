@@ -169,7 +169,7 @@ double s_me(double inprod, double v, NumericVector& lambda, double gamma, Numeri
 
   if (abs(inprod) < (v*lambda_r[0]*gamma + delta_r[1]*(1-lambda_r[0]/lambda_r[1]))  ){
     if (abs(inprod) >= (delta_r[0]+delta_r[1]) ){
-      ret = ( abs(inprod)-(delta_r[0]+delta_r[1]) ) / (v - 1.0/gamma*(ratio[0]+ratio[1]));
+      ret = ( abs(inprod)-(delta_r[0]+delta_r[1]) ) / (1 - 1.0/gamma*(ratio[0]+ratio[1]));
     }
     else{
       ret = 0.0;
@@ -177,16 +177,16 @@ double s_me(double inprod, double v, NumericVector& lambda, double gamma, Numeri
   }
   else if (abs(inprod) < v*lambda_r[1]*gamma){
     if (abs(inprod) > (delta_r[1])){
-      ret = ( abs(inprod)-(delta_r[1]) ) / (v - 1.0/gamma*(ratio[1]) );
+      ret = ( abs(inprod)-(delta_r[1]) ) / (1 - 1.0/gamma*(ratio[1]) );
     }
     else{
       ret = 0.0;
     }
   }
   else{
-    ret = abs(inprod)/v;
+    ret = abs(inprod);
   }
-  // ret=ret/v;
+  ret=ret/v;
   return (sgn*ret);
 
 }
@@ -314,7 +314,7 @@ bool coord_des_onerun(int pme, int nn, NumericVector& lambda, NumericVector& cur
                       vector<double>& delta_sib, vector<double>& delta_cou,
                       vector<bool>& act_me, vector<bool>& act_cme, double& inter,
                       vector<double>& beta_me, vector<double>& beta_cme,
-                      vector<double>& eta, double nullDev){
+                      vector<double>& eta){
   bool chng_flag = false;
   double cur_beta = 0.0;
   double cur_inter = 0.0;
@@ -339,12 +339,6 @@ bool coord_des_onerun(int pme, int nn, NumericVector& lambda, NumericVector& cur
        if (yy[k]==0) dev = dev - log(1-mu);
      }
 
-     // Check for saturation
-     if (dev/nullDev < .01) {
-       warning("Model saturated; exiting...");
-       //break;
-     }
-
      //Update intercept
      xwr = crossprod(W, resid, nn, 0);
      xwx = sum(W,nn);
@@ -362,8 +356,6 @@ bool coord_des_onerun(int pme, int nn, NumericVector& lambda, NumericVector& cur
     if (act_me[j]){
       cur_beta = beta_me[j];
 
-      //inprod = 0.0;
-      //v = 0.25;
       // Updata covariates
       xwr = wcrossprod(X_me, resid, W, nn, j);
       xwx = wsqsum(X_me, W, nn, j);
@@ -383,8 +375,8 @@ bool coord_des_onerun(int pme, int nn, NumericVector& lambda, NumericVector& cur
 
         //Update resid eta, mu, weight
         for (int k=0;k<nn;k++){
-          resid[k] = resid[k] - X_me[j*nn+k]*(beta_me[j]-cur_beta);
-          eta[k] = eta[k] + X_me[j*nn+k]*(beta_me[j]-cur_beta);
+          resid[k] -= X_me[j*nn+k]*(beta_me[j]-cur_beta);
+          eta[k] += X_me[j*nn+k]*(beta_me[j]-cur_beta);
           //mu = pbinomial(eta[k]) ;
           //W[k] = fmax2(mu*(1-mu),0.0001);
           //v += (X_me[j*nn+k]*W[k]*X_me[j*nn+k])/((double)nn);
@@ -405,10 +397,26 @@ bool coord_des_onerun(int pme, int nn, NumericVector& lambda, NumericVector& cur
     }
   }
 
-  cur_beta = 0.0;
-  inprod = 0.0;
-  v = 0.25;
+    //Compute inner product and v
+    for (int k=0;k<nn;k++){
+      mu = pbinomial(eta[k]) ;
+      W[k] = fmax2(mu*(1-mu),0.0001);
+      resid[k] = (yy[k]-mu)/W[k];
+      if (yy[k]==1) dev = dev - log(mu);
+      if (yy[k]==0) dev = dev - log(1-mu);
+    }
 
+
+    //Update intercept
+    xwr = crossprod(W, resid, nn, 0);
+    xwx = sum(W,nn);
+    inter = xwr/xwx + cur_inter;
+    for (int i=0; i<nn; i++) {
+      resid[i] -= inter - cur_inter;
+      eta[i] += inter - cur_inter;
+      //mu = pbinomial(eta[i]) ;
+      //W[i] = fmax2(mu*(1-mu),0.0001);
+    }
 
 
   //CD for CME effects
@@ -430,34 +438,6 @@ bool coord_des_onerun(int pme, int nn, NumericVector& lambda, NumericVector& cur
         cur_delta[0] = delta_sib[j];
         cur_delta[1] = delta_cou[condind];
 
-        //Compute inner product
-        //inprod = 0.0;
-        //v = 0.25;
-        // for (int l=0;l<nn;l++){
-        //   mu = pbinomial(eta[l]) ;
-        //   W[l] = fmax2(mu*(1-mu),0.0001);
-        //   resid[l] = (yy[l]-mu)/W[l];
-        //   if (yy[l]==1) dev = dev - log(mu);
-        //   if (yy[l]==0) dev = dev - log(1-mu);
-        // }
-        //
-        // // Check for saturation
-        // if (dev/nullDev < .01) {
-        //   warning("Model saturated; exiting...");
-        //   break;
-        // }
-
-
-        // //Update intercept
-        // xwr = crossprod(W, resid, nn, 0);
-        // xwx = sum(W,nn);
-        // inter = xwr/xwx + cur_inter;
-        // for (int i=0; i<nn; i++) {
-        //   resid[i] -= inter - cur_inter;
-        //   eta[i] += inter - cur_inter;
-        // }
-        // max_change = fabs(inter - cur_inter)*xwx/((double)nn);
-
         // Updata covariates
         xwr = wcrossprod(X_cme, resid, W, nn, cmeind);
         xwx = wsqsum(X_cme, W, nn, cmeind);
@@ -473,8 +453,8 @@ bool coord_des_onerun(int pme, int nn, NumericVector& lambda, NumericVector& cur
 
           //Update resid eta, mu, weight
           for (int ll=0;ll<nn;ll++){
-            resid[ll] = resid[ll] - X_cme[cmeind*nn+ll]*(beta_cme[cmeind]-cur_beta);
-            eta[ll] = eta[ll] + X_cme[cmeind*nn+ll]*(beta_cme[cmeind]-cur_beta);
+            resid[ll] -= X_cme[cmeind*nn+ll]*(beta_cme[cmeind]-cur_beta);
+            eta[ll] += X_cme[cmeind*nn+ll]*(beta_cme[cmeind]-cur_beta);
             //mu = pbinomial(eta[ll]) ;
             //W[ll] = fmax2(mu*(1-mu),0.0001);
             //v += (X_me[j*nn+k]*W[k]*X_me[j*nn+k])/((double)nn);
@@ -706,7 +686,7 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy,
   double nullDev = 0.0;
   double dev = 0.0;
   double inter= 0.0; //for intercept
-  //double inprod = 0.0; //inner product
+  double inprod = 0.0; //inner product
   //double thresh = 0.0; //threshold for screening
   int num_act = 0;
 
@@ -819,7 +799,7 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy,
         //Active set reset for it_warm iterations
         for (int m=0; m<it_warm; m++){
           chng_flag = coord_des_onerun(pme, nn, lambda, cur_delta, chng_flag, tau, gamma, X_me, X_cme, yy,
-                                       delta_sib, delta_cou, act_me, act_cme, inter, beta_me, beta_cme, eta, nullDev);
+                                       delta_sib, delta_cou, act_me, act_cme, inter, beta_me, beta_cme, eta);
         }
 
 
@@ -856,7 +836,7 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy,
           //Increment count and update flags
           it_inner ++;
           chng_flag = coord_des_onerun(pme, nn, lambda, cur_delta, chng_flag, tau, gamma, X_me, X_cme, yy,
-                                       delta_sib, delta_cou, act_me, act_cme, inter, beta_me, beta_cme, eta,nullDev);
+                                       delta_sib, delta_cou, act_me, act_cme, inter, beta_me, beta_cme, eta);
 
           //Update cont flag for termination
           if ( (it_inner >= it_max_reset)||(!chng_flag) ){
@@ -947,13 +927,12 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy,
                        Named("intercept") = inter_mat,
                        Named("residuals") = resid_cube,
                        Named("deviation") = dev_mat,
-                       //Named("nzero") = nz,
+                       Named("nzero") = nz,
                        Named("lambda_sib") = lambda_sib_vec,
                        Named("lambda_cou") = lambda_cou_vec,
                        Named("act") = scr_cube,
                        Named("gamma") = gamma,
-                       Named("tau") = tau,
-                       Named("y") = yy
+                       Named("tau") = tau
   ));
 
 }
