@@ -417,7 +417,8 @@ bool coord_des_onerun(int pme, int nn, NumericVector& lambda, NumericVector& cur
       //mu = pbinomial(eta[i]) ;
       //W[i] = fmax2(mu*(1-mu),0.0001);
     }
-
+    cur_beta = 0.0;
+    inprod = 0.0;
 
   //CD for CME effects
   for (int j=0;j<pme;j++){ //parent effect
