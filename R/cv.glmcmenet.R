@@ -11,7 +11,7 @@ cv.glmcmenet <- function (xme, xcme, y, family = binomial(), nfolds = 10, var.na
   min.gamma <- max(max(apply(xmat,2,function(x){8*nrow(xmat)/sum(x^2)}))+ 0.001,1/(0.125 - min.tau) + 0.001)
   act.vec <- rep(-1, ncol(xme) + ncol(xcme))
   if (warm.str == "lasso") {
-    if (family == "gaussian"){
+    if (family$family == "gaussian"){
       cvlas <- cv.glmnet(cbind(xme, xcme), y,family = "gaussian")
       lasfit <- glmnet(cbind(xme, xcme), y,family = "gaussian")
       lasind <- which(lasfit$beta[, which(cvlas$lambda ==
@@ -19,7 +19,7 @@ cv.glmcmenet <- function (xme, xcme, y, family = binomial(), nfolds = 10, var.na
       act.vec <- rep(-1, ncol(xme) + ncol(xcme))
       act.vec[lasind] <- 1
     }
-    if (family == "binomial"){
+    if (family$family == "binomial"){
     cvlas <- cv.glmnet(cbind(xme, xcme), y,family = "binomial",type.measure = "deviance")
     lasfit <- glmnet(cbind(xme, xcme), y,family = "binomial")
     lasind <- which(lasfit$beta[, which(cvlas$lambda ==
@@ -27,7 +27,7 @@ cv.glmcmenet <- function (xme, xcme, y, family = binomial(), nfolds = 10, var.na
     act.vec <- rep(-1, ncol(xme) + ncol(xcme))
     act.vec[lasind] <- 1
     }
-    else if (family == "poisson"){
+    else if (family$family == "poisson"){
       cvlas <- cv.glmnet(cbind(xme, xcme), y,family = "poisson")
       lasfit <- glmnet(cbind(xme, xcme), y,family = "poisson")
       lasind <- which(lasfit$beta[, which(cvlas$lambda ==
