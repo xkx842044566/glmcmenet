@@ -1,6 +1,6 @@
-cv.glmcmenet <- function (xme, xcme, y, family = binomial(), nfolds = 10, var.names = NULL, nlambda.sib = 10,
-          nlambda.cou = 10, lambda.min.ratio = 1e-06, ngamma = 10,
-          max.gamma = 1000, ntau = 10, max.tau = 0.01, tau.min.ratio = 0.01,
+cv.glmcmenet <- function (xme, xcme, y, family = binomial(), nfolds = 10, var.names = NULL, nlambda.sib = 100,
+          nlambda.cou = 100, lambda.min.ratio = 1e-06, ngamma = 100,
+          max.gamma = 1000, ntau = 100, max.tau = 0.01, tau.min.ratio = 0.01,
           it.max = 250, it.max.cv = 25, type.measure="deviance",warm.str = c("lasso","hierNet"))
 {
   pme <- ncol(xme)
@@ -100,7 +100,7 @@ cv.glmcmenet <- function (xme, xcme, y, family = binomial(), nfolds = 10, var.na
                                                            lambda.min.ratio), length = nlambda.cou))
   gamma_vec = exp(seq(from = log(max.gamma), to = log(min.gamma),
                       length = ngamma - 1))
-  gamma_vec = c(200, gamma_vec)
+  gamma_vec = c(9.9e+35, gamma_vec)
   tau_vec = rev(exp(seq(from = log(max.tau), to = log(min.tau),
                         length = ntau)))
 
@@ -228,8 +228,8 @@ cv.glmcmenet <- function (xme, xcme, y, family = binomial(), nfolds = 10, var.na
   #refit model based on selected variables
   #temp<-cbind(cbind(xme,xcme)[,obj$select.idx],y)
   #colnames(temp)<-c(obj$select.names,"y")
-  me_idx <-  obj$select.idx[which(obj$select.idx)<=nrow(xme)]
-  cme_idx <-  obj$select.idx[which(obj$select.idx)>nrow(xme)]
+  me_idx <-  obj$select.idx[obj$select.idx<=nrow(xme)]
+  cme_idx <-  obj$select.idx[obj$select.idx>nrow(xme)]
   refit <- glmcmenet(xme = xme[,me_idx], xcme = xcme[,cme_idx], y, lambda.sib = obj$params[1],
                      lambda.cou = obj$params[2], lambda.flg = T, gamma = obj$params[3],
                      tau = obj$params[4], act.vec = act.vec, max.lambda = max.lambda,
