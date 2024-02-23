@@ -5,7 +5,7 @@ glmcmenet <- function (xme, xcme, y, lambda.sib = exp(seq(from = log(max.lambda)
                                                                                                                                                                                                                                                                ncol(xme) + ncol(xcme)), beta0 = rep(0, ncol(xme) + ncol(xcme)),
           it.max = 250, lambda.flg = T)
 {
-  family <- match.arg(family)
+  #family <- match.arg(family)
   idx.constme <- which(apply(xme, 2, function(xx) {
     all(xx == mean(xx))
   }))
