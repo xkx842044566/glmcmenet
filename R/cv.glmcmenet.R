@@ -1,6 +1,6 @@
-cv.glmcmenet <- function (xme, xcme, y, family = binomial(), nfolds = 10, var.names = NULL, nlambda.sib = 100,
-          nlambda.cou = 100, lambda.min.ratio = 1e-06, ngamma = 100,
-          max.gamma = 150, ntau = 100, max.tau = 0.01, tau.min.ratio = 0.01,
+cv.glmcmenet <- function (xme, xcme, y, family = binomial(), nfolds = 10, var.names = NULL, nlambda.sib = 20,
+          nlambda.cou = 20, lambda.min.ratio = 1e-06, ngamma = 20,
+          max.gamma = 150, ntau = 20, max.tau = 0.01, tau.min.ratio = 0.01,
           it.max = 250, it.max.cv = 25, type.measure="deviance",warm.str = c("lasso","hierNet"))
 {
   pme <- ncol(xme)
@@ -11,30 +11,12 @@ cv.glmcmenet <- function (xme, xcme, y, family = binomial(), nfolds = 10, var.na
   min.gamma <- max(max(apply(xmat,2,function(x){8*nrow(xmat)/sum(x^2)}))+ 0.001,1/(0.125 - min.tau) + 0.001)
   act.vec <- rep(-1, ncol(xme) + ncol(xcme))
   if (warm.str == "lasso") {
-    if (family$family == "gaussian"){
-      cvlas <- cv.glmnet(cbind(xme, xcme), y,family = "gaussian")
-      lasfit <- glmnet(cbind(xme, xcme), y,family = "gaussian")
+      cvlas <- cv.glmnet(cbind(xme, xcme), y,family = family)
+      lasfit <- glmnet(cbind(xme, xcme), y,family = family)
       lasind <- which(lasfit$beta[, which(cvlas$lambda ==
                                             cvlas$lambda.1se)] != 0)
       act.vec <- rep(-1, ncol(xme) + ncol(xcme))
       act.vec[lasind] <- 1
-    }
-    if (family$family == "binomial"){
-    cvlas <- cv.glmnet(cbind(xme, xcme), y,family = "binomial",type.measure = "deviance")
-    lasfit <- glmnet(cbind(xme, xcme), y,family = "binomial")
-    lasind <- which(lasfit$beta[, which(cvlas$lambda ==
-                                          cvlas$lambda.1se)] != 0)
-    act.vec <- rep(-1, ncol(xme) + ncol(xcme))
-    act.vec[lasind] <- 1
-    }
-    else if (family$family == "poisson"){
-      cvlas <- cv.glmnet(cbind(xme, xcme), y,family = "poisson")
-      lasfit <- glmnet(cbind(xme, xcme), y,family = "poisson")
-      lasind <- which(lasfit$beta[, which(cvlas$lambda ==
-                                            cvlas$lambda.1se)] != 0)
-      act.vec <- rep(-1, ncol(xme) + ncol(xcme))
-      act.vec[lasind] <- 1
-    }
   }
   else if (warm.str == "hierNet") {
     ## need to change later
