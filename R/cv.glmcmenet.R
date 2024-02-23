@@ -228,13 +228,8 @@ cv.glmcmenet <- function (xme, xcme, y, family = binomial(), nfolds = 10, var.na
   #refit model based on selected variables
   #temp<-cbind(cbind(xme,xcme)[,obj$select.idx],y)
   #colnames(temp)<-c(obj$select.names,"y")
-  me_idx <-  obj$select.idx[obj$select.idx<=nrow(xme)]
-  cme_idx <-  obj$select.idx[obj$select.idx>nrow(xme)]
-  refit <- glmcmenet(xme = xme[,me_idx], xcme = xcme[,cme_idx], y, lambda.sib = obj$params[1],
-                     lambda.cou = obj$params[2], lambda.flg = T, gamma = obj$params[3],
-                     tau = obj$params[4], act.vec = act.vec, max.lambda = max.lambda,
-                     it.max = it.max)
-  obj$cme.refit <- refit
+  #refit <- glm(y~.,temp,family="binomial")
+  #obj$cme.refit <- refit
   #obj$class.err.rate<-mean(ifelse(refit$fitted.values>0.5,1,0)!=y)
 
   class(obj) = "cv.glmcme"
