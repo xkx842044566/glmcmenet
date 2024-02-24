@@ -14,7 +14,7 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
       cvlas <- cv.glmnet(cbind(xme, xcme), y,family = family)
       lasfit <- glmnet(cbind(xme, xcme), y,family = family)
       lasind <- which(lasfit$beta[, which(cvlas$lambda ==
-                                            cvlas$lambda.1se)] != 0)
+                                            cvlas$lambda.min)] != 0)
       act.vec <- rep(-1, ncol(xme) + ncol(xcme))
       act.vec[lasind] <- 1
   }
