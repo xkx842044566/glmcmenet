@@ -86,6 +86,18 @@ double pbinomial(double eta) {
   }
 }
 
+// E(y|X) for poisson
+double ppoisson(double eta) {
+  if (eta > 16) {
+    return(0.9999);
+  } else if (eta < -16) {
+    return(0.0001);
+  } else {
+    return(exp(eta));
+  }
+}
+
+
 // Cross product of y with jth column of X
 double crossprod(vector<double>& X, vector<double>& yy, int n, int j) {
   int nn = n*j;
@@ -310,7 +322,7 @@ bool kkt(double inprod,  NumericVector cur_delta){
 //One run of coordinate descent
 bool coord_des_onerun(int pme, int nn, NumericVector& lambda, NumericVector& cur_delta,
                       bool dummy, double tau, double gamma,
-                      vector<double>& X_me, vector<double>& X_cme, NumericVector& yy,
+                      vector<double>& X_me, vector<double>& X_cme, NumericVector& yy, CharacterVector& family,
                       vector<double>& delta_sib, vector<double>& delta_cou,
                       vector<bool>& act_me, vector<bool>& act_cme, double& inter,
                       vector<double>& beta_me, vector<double>& beta_cme,
@@ -325,18 +337,30 @@ bool coord_des_onerun(int pme, int nn, NumericVector& lambda, NumericVector& cur
   double mu = 0.0;
   double dev = 0.0;
 
+  // Extract the family type from CharacterVector
+  std::string familyType = Rcpp::as<std::string>(family[0]);
+
   vector<double> W(nn);
   vector<double> resid(nn);
 
      cur_inter= inter;
 
      //Compute inner product and v
-     for (int k=0;k<nn;k++){
-       mu = pbinomial(eta[k]) ;
-       W[k] = fmax2(mu*(1-mu),0.0001);
-       resid[k] = (yy[k]-mu)/W[k];
-       if (yy[k]==1) dev = dev - log(mu);
-       if (yy[k]==0) dev = dev - log(1-mu);
+     if (familyType == "binomial") {
+       for (int k=0;k<nn;k++){
+         mu = pbinomial(eta[k]) ;
+         W[k] = fmax2(mu*(1-mu),0.0001);
+         resid[k] = (yy[k]-mu)/W[k];
+         if (yy[k]==1) dev = dev - log(mu);
+         if (yy[k]==0) dev = dev - log(1-mu);
+       }
+     }else if(familyType == "poisson") {
+       for (int k=0;k<nn;k++){
+         mu = ppoisson(eta[k]) ;
+         W[k] = fmax2(mu,0.0001);
+         resid[k] = (yy[k]-mu)/W[k];
+         if (yy[k]!=0) dev = dev + yy[k]*log(yy[k]/mu);
+       }
      }
 
      //Update intercept
@@ -398,12 +422,21 @@ bool coord_des_onerun(int pme, int nn, NumericVector& lambda, NumericVector& cur
   }
 
     //Compute inner product and v
-    for (int k=0;k<nn;k++){
-      mu = pbinomial(eta[k]) ;
-      W[k] = fmax2(mu*(1-mu),0.0001);
-      resid[k] = (yy[k]-mu)/W[k];
-      if (yy[k]==1) dev = dev - log(mu);
-      if (yy[k]==0) dev = dev - log(1-mu);
+    if (familyType == "binomial") {
+      for (int k=0;k<nn;k++){
+        mu = pbinomial(eta[k]) ;
+        W[k] = fmax2(mu*(1-mu),0.0001);
+        resid[k] = (yy[k]-mu)/W[k];
+        if (yy[k]==1) dev = dev - log(mu);
+        if (yy[k]==0) dev = dev - log(1-mu);
+      }
+    }else if(familyType == "poisson") {
+      for (int k=0;k<nn;k++){
+        mu = ppoisson(eta[k]) ;
+        W[k] = fmax2(mu,0.0001);
+        resid[k] = (yy[k]-mu)/W[k];
+        if (yy[k]!=0) dev = dev + yy[k]*log(yy[k]/mu);
+      }
     }
 
 
@@ -573,7 +606,7 @@ bool coord_des_onerun(int pme, int nn, NumericVector& lambda, NumericVector& cur
 }
 
 // [[Rcpp::export]]
-List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy,
+List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, CharacterVector& family,
          NumericVector& lambda_sib_vec, NumericVector& lambda_cou_vec,
          NumericVector& gamma_vec, NumericVector& tau_vec,
          NumericVector& XX_me_sl, NumericVector& XX_cme_sl, NumericVector& beta_vec, NumericVector& act_vec,
@@ -600,8 +633,10 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy,
   int it_max_reset = it_max / reset;
   bool cont = true;
   bool chng_flag = false;
-  double v = 0.0;
+  double v = 0.25;
 
+  // Extract the family type from CharacterVector
+  std::string familyType = Rcpp::as<std::string>(family[0]);
 
   //Vectorize model matrices
   vector<double> X_me(nn*pme); //for ME
@@ -692,14 +727,20 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy,
   int num_act = 0;
 
   for (int i=0;i<nn;i++){
-    ymean += (1.0/(double)nn)*yy(i);
+    ymean += (1.0/(double)nn)*yy[i];
   }
-  inter = log(ymean/(1-ymean));
-  for (int i=0;i<nn;i++){
-    eta[i] = log(ymean/(1-ymean)); //
-    //W[i] = fmax2(ymean*(1-ymean),0.0001);
-    //resid[i] = (yy(i) - ymean)/W[i];
-    nullDev -= 2*yy(i)*log(ymean) + 2*(1-yy(i))*log(1-ymean);
+  if (familyType == "binomial") {
+    inter = log(ymean/(1-ymean));
+    for (int i=0; i<nn; i++) {
+      eta[i] = log(ymean/(1-ymean)); //
+      nullDev -= 2*yy[i]*log(ymean) + 2*(1-yy[i])*log(1-ymean);
+    }
+  } else if (familyType == "poisson") {
+    inter = log(ymean);
+    for (int i=0;i<nn;i++) {
+      if (yy[i]!=0) nullDev += 2*(yy[i]*log(yy[i]/ymean) + ymean - yy[i]);
+      else nullDev += 2*ymean;
+    }
   }
 
   vector<bool> kkt_v_me(pme,true);
@@ -734,12 +775,18 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy,
         for (int i=0;i<pcme;i++){
           beta_cme[i] = 0.0;
         }
-        inter= log(ymean/(1-ymean));
-        for (int i=0;i<nn;i++){//reset residuals
-          eta[i] = log(ymean/(1-ymean)); //
-          //W[i] = fmax2(ymean*(1-ymean),0.0001);
-          //resid[i] = (yy(i) - ymean)/W[i];
-          nullDev -=  2*yy(i)*log(ymean) + 2*(1-yy(i))*log(1-ymean);
+        if (familyType == "binomial") {
+          inter = log(ymean/(1-ymean));
+          for (int i=0; i<nn; i++) {
+            eta[i] = log(ymean/(1-ymean)); //
+            nullDev -= 2*yy[i]*log(ymean) + 2*(1-yy[i])*log(1-ymean);
+          }
+        } else if (familyType == "poisson") {
+          inter = log(ymean);
+          for (int i=0;i<nn;i++) {
+            if (yy[i]!=0) nullDev += 2*(yy[i]*log(yy[i]/ymean) + ymean - yy[i]);
+            else nullDev += 2*ymean;
+          }
         }
         num_act = 0;
         for (int i=0;i<pme;i++){//reset active flag
@@ -765,12 +812,18 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy,
       for (int i=0;i<pcme;i++){
         beta_cme[i] = 0.0;
       }
-      inter = log(ymean/(1-ymean));
-      for (int i=0;i<nn;i++){//reset residuals
-        eta[i] = log(ymean/(1-ymean)); //
-        //W[i] = fmax2(ymean*(1-ymean),0.0001);
-        //resid[i] = (yy(i) - ymean)/W[i];
-        nullDev -= 2*yy(i)*log(ymean) + 2*(1-yy(i))*log(1-ymean);
+      if (familyType == "binomial") {
+        inter = log(ymean/(1-ymean));
+        for (int i=0; i<nn; i++) {
+          eta[i] = log(ymean/(1-ymean)); //
+          nullDev -= 2*yy[i]*log(ymean) + 2*(1-yy[i])*log(1-ymean);
+        }
+      } else if (familyType == "poisson") {
+        inter = log(ymean);
+        for (int i=0;i<nn;i++) {
+          if (yy[i]!=0) nullDev += 2*(yy[i]*log(yy[i]/ymean) + ymean - yy[i]);
+          else nullDev += 2*ymean;
+        }
       }
 
       //Recompute deltas
@@ -799,7 +852,7 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy,
 
         //Active set reset for it_warm iterations
         for (int m=0; m<it_warm; m++){
-          chng_flag = coord_des_onerun(pme, nn, lambda, cur_delta, chng_flag, tau, gamma, X_me, X_cme, yy,
+          chng_flag = coord_des_onerun(pme, nn, lambda, cur_delta, chng_flag, tau, gamma, X_me, X_cme, yy, family,
                                        delta_sib, delta_cou, act_me, act_cme, inter, beta_me, beta_cme, eta);
         }
 
@@ -836,7 +889,7 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy,
 
           //Increment count and update flags
           it_inner ++;
-          chng_flag = coord_des_onerun(pme, nn, lambda, cur_delta, chng_flag, tau, gamma, X_me, X_cme, yy,
+          chng_flag = coord_des_onerun(pme, nn, lambda, cur_delta, chng_flag, tau, gamma, X_me, X_cme, yy,family,
                                        delta_sib, delta_cou, act_me, act_cme, inter, beta_me, beta_cme, eta);
 
           //Update cont flag for termination
