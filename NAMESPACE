@@ -1,6 +1,7 @@
 exportPattern("^[[:alpha:]]+")
 import(Rcpp)
 import(glmnet)
+import(ncvreg)
 import(hierNet)
 import(sparsenet)
 importFrom("stats", "median")

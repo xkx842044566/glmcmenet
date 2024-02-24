@@ -1,7 +1,7 @@
 cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfolds = 10, var.names = NULL, nlambda.sib = 20,
           nlambda.cou = 20, lambda.min.ratio = 1e-06, ngamma = 20,
           max.gamma = 150, ntau = 20, max.tau = 0.01, tau.min.ratio = 0.01,
-          it.max = 250, it.max.cv = 25, type.measure=c("deviance","class"),warm.str = c("lasso","grpreg"))
+          it.max = 250, it.max.cv = 25, type.measure=c("deviance","class"),warm.str = c("lasso","ncvreg"))
 {
   pme <- ncol(xme)
   pcme <- ncol(xcme)
@@ -19,11 +19,11 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
       act.vec[lasind] <- 1
   }
   else if (warm.str == "grpreg") {
-    cvncv <- cv.ncvreg(cbind(xme,xcme),y,family = family,penalty="cMCP")
-    ncvfit <- ncvreg(cbind(xme,xcme),y,family = family,penalty="cMCP")
+    cvncv <- cv.ncvreg(cbind(xme,xcme),y,family = family,penalty="MCP")
+    ncvfit <- ncvreg(cbind(xme,xcme),y,family = family,penalty="MCP")
     ncvind <- which(ncvfit$beta[,which(cv.ncv$lambda==cv.ncv$lambda.min)]!=0)
     act.vec <- rep(-1, ncol(xme) + ncol(xcme))
-    act.vec[lasind[-1]] <- 1
+    act.vec[lasind] <- 1
   }
   start_val <- get_start(cbind(xme, xcme), y,family)
   max.lambda <- start_val$lambda_max
