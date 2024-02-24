@@ -21,7 +21,7 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
   else if (warm.str == "grpreg") {
     cvncv <- cv.ncvreg(cbind(xme,xcme),y,family = family,penalty="MCP")
     ncvfit <- ncvreg(cbind(xme,xcme),y,family = family,penalty="MCP")
-    ncvind <- which(ncvfit$beta[,which(cv.ncv$lambda==cv.ncv$lambda.min)]!=0)
+    ncvind <- which(ncvfit$beta[,which(cvncv$lambda==cvncv$lambda.min)]!=0)
     act.vec <- rep(-1, ncol(xme) + ncol(xcme))
     act.vec[lasind] <- 1
   }
