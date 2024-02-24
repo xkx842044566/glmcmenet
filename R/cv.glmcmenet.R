@@ -1,4 +1,4 @@
-cv.glmcmenet <- function (xme, xcme, y, family = binomial(), nfolds = 10, var.names = NULL, nlambda.sib = 20,
+cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfolds = 10, var.names = NULL, nlambda.sib = 20,
           nlambda.cou = 20, lambda.min.ratio = 1e-06, ngamma = 20,
           max.gamma = 150, ntau = 20, max.tau = 0.01, tau.min.ratio = 0.01,
           it.max = 250, it.max.cv = 25, type.measure=c("deviance","class"),warm.str = c("lasso","hierNet"))
@@ -103,7 +103,7 @@ cv.glmcmenet <- function (xme, xcme, y, family = binomial(), nfolds = 10, var.na
     stop("nfolds must be bigger than 3; nfolds=10 recommended")
   }
 
-  if (family$family=="binomial") {
+  if (family=="binomial") {
     ind1 <- which(y==1)
     ind0 <- which(y==0)
     n1 <- length(ind1)
@@ -115,7 +115,7 @@ cv.glmcmenet <- function (xme, xcme, y, family = binomial(), nfolds = 10, var.na
     foldid <- double(n)
     foldid[y==1] <- sample(fold1)
     foldid[y==0] <- sample(fold0)
-  }else if (family$family=="poisson") {
+  }else if (family=="poisson") {
     foldid <- sample(1:n %% nfolds)
     foldid[foldid==0] <- nfolds
   }
@@ -130,13 +130,13 @@ cv.glmcmenet <- function (xme, xcme, y, family = binomial(), nfolds = 10, var.na
     setTxtProgressBar(pb, i/nfolds)
     which = (foldid == i)
     fitobj <- glmcmenet(xme = xme[!which, , drop = F], xcme = xcme[!which,
-                                                                , drop = F], y = y[!which],  family=family$family,
+                                                                , drop = F], y = y[!which],  family=family,
                      lambda.sib = parms1.min[1],lambda.cou = parms1.min[2], lambda.flg = F, gamma = gamma_vec,
                      tau = tau_vec, act.vec = act.vec, max.lambda = max.lambda,
                      it.max = it.max.cv)
     xtest <- xmat[which, , drop = F]
     yhat <- predictcme(fitobj, xtest, type="response")
-    predmat[which, , ] <- loss(y[which],yhat,family=family$family,type.measure="deviance")
+    predmat[which, , ] <- loss(y[which],yhat,family=family,type.measure="deviance")
 
   }
   cat("\n")
@@ -167,13 +167,13 @@ cv.glmcmenet <- function (xme, xcme, y, family = binomial(), nfolds = 10, var.na
     setTxtProgressBar(pb, i/nfolds)
     which = (foldid == i)
     fitobj <- glmcmenet(xme = xme[!which, , drop = F], xcme = xcme[!which,
-                                                                , drop = F], y = y[!which], family=family$family,
+                                                                , drop = F], y = y[!which], family=family,
                      lambda.sib = lambda.sib,lambda.cou = lambda.cou, lambda.flg = T, gamma = parms2.min[1],
                      tau = parms2.min[2], act.vec = act.vec, max.lambda = max.lambda,
                      it.max = it.max.cv)
     xtest <- xmat[which, , drop = F]
     yhat <- predictcme(fitobj, xtest, type="response")
-    predmat[which, , ] <- loss(y[which],yhat,family=family$family,type.measure="deviance")
+    predmat[which, , ] <- loss(y[which],yhat,family=family,type.measure="deviance")
   }
   cat("\n")
   cvm.lambda <- apply(predmat, c(2, 3), mean)
@@ -191,7 +191,7 @@ cv.glmcmenet <- function (xme, xcme, y, family = binomial(), nfolds = 10, var.na
 
   #Perform selection on full data with final parameters
   print(paste0("Fitting full data ..."))
-  fitall <- glmcmenet(xme = xme, xcme = xcme, y,  family=family$family, lambda.sib = lambda.sib,
+  fitall <- glmcmenet(xme = xme, xcme = xcme, y,  family=family, lambda.sib = lambda.sib,
                    lambda.cou = lambda.cou, lambda.flg = T, gamma = obj$params[3],
                    tau = obj$params[4], act.vec = act.vec, max.lambda = max.lambda,
                    it.max = it.max)

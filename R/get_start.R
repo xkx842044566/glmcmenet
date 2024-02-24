@@ -1,6 +1,12 @@
-dev_function <- function(y, mu, weights, family) {
-  sum(family$dev.resids(y, mu,weights))
-}
+# dev_function <- function(y, mu, family) {
+#   if (family == "binomial") {
+#     # Binomial deviance
+#     return(sum((y * log(y / mu) + (1 - y) * log((1 - y) / (1 - mu)))))
+#   } else if (family == "poisson") {
+#     # Poisson deviance
+#     return(sum((y * log(y / mu) - (y - mu))))
+#   }
+# }
 
 get_start <- function(x, y, family, intercept) {
   nobs <- nrow(x); nvars <- ncol(x)
@@ -8,20 +14,27 @@ get_start <- function(x, y, family, intercept) {
   # compute mu and null deviance
   # family = binomial() gives us warnings due to non-integer weights
   # to avoid, suppress warnings
-  weights = rep(1,nobs)
 
   mu <- rep(mean(y), times = nobs)
 
-  nulldev <- dev_function(y, mu, weights/sum(weights), family)
+  #nulldev <- dev_function(y, mu, family)
+
+  ju <- rep(1, nvars)
+  r <- y - mu
 
   # if some penalty factors are zero, we have to recompute mu
 
   # compute lambda max
-  ju <- rep(1, nvars)
-  r <- y - mu
-  eta <- family$linkfun(mu)
-  v <- family$variance(mu)
-  m.e <- family$mu.eta(eta)
+  # Adjust calculations based on family
+  if (family == "binomial") {
+    eta <- log(mu / (1 - mu)) # logit link for binomial
+    v <- mu * (1 - mu) # binomial variance
+    m.e <- mu * (1 - mu) # derivative of mu w.r.t. eta for binomial with logit link
+  } else if (family == "poisson") {
+    eta <- log(mu) # log link for poisson
+    v <- mu # poisson variance
+    m.e <- 1 # derivative of mu w.r.t. eta for poisson with log link
+  }
   rv <- r / v * m.e
   if (inherits(x, "sparseMatrix")) {
     xm <- attr(x, "xm")
@@ -33,5 +46,5 @@ get_start <- function(x, y, family, intercept) {
   g <- g * ju
   lambda_max <- max(g) / max(1, 1e-3)
 
-  list(nulldev = nulldev, mu = mu, lambda_max = lambda_max)
+  list(mu = mu, lambda_max = lambda_max) #nulldev = nulldev,
 }
