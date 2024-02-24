@@ -1,7 +1,7 @@
 cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfolds = 10, var.names = NULL, nlambda.sib = 20,
           nlambda.cou = 20, lambda.min.ratio = 1e-06, ngamma = 20,
           max.gamma = 150, ntau = 20, max.tau = 0.01, tau.min.ratio = 0.01,
-          it.max = 250, it.max.cv = 25, type.measure=c("deviance","class"),warm.str = c("lasso","hierNet"))
+          it.max = 250, it.max.cv = 25, type.measure=c("deviance","class"),warm.str = c("lasso","grpreg"))
 {
   pme <- ncol(xme)
   pcme <- ncol(xcme)
@@ -18,61 +18,12 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
       act.vec <- rep(-1, ncol(xme) + ncol(xcme))
       act.vec[lasind] <- 1
   }
-  else if (warm.str == "hierNet") {
-    ## need to change later
+  else if (warm.str == "grpreg") {
+    cvncv <- cv.ncvreg(cbind(xme,xcme),y,family = family,penalty="cMCP")
+    ncvfit <- ncvreg(cbind(xme,xcme),y,family = family,penalty="cMCP")
+    ncvind <- which(ncvfit$beta[,which(cv.ncv$lambda==cv.ncv$lambda.min)]!=0)
     act.vec <- rep(-1, ncol(xme) + ncol(xcme))
-    warm.hn <- hierNet.logistic.path(xme, y)
-    warm.cv <- hierNet.cv(warm.hn, xme, y)
-    l.opt <- which(warm.hn$lamlist == warm.cv$lamhat.1se)
-    me.sel <- (warm.hn$bp - warm.hn$bn)[, l.opt]
-    me.idx <- which(me.sel != 0)
-    int.sel <- warm.hn$th[, , l.opt]
-    int.pidx <- which(int.sel > 0, arr.ind = T)
-    int.pidx <- t(apply(int.pidx, 1, function(xx) {
-      sort(xx)
-    }))
-    int.pidx <- unique(int.pidx)
-    if (nrow(int.pidx) > 0) {
-      for (ii in 1:nrow(int.pidx)) {
-        inta <- int.pidx[ii, 1]
-        intb <- int.pidx[ii, 2]
-        if (inta %in% me.idx) {
-          cmeind = (inta - 1) * (2 * (pme - 1)) + (intb -
-                                                     2) * 2 + 1
-          act.vec[pme + cmeind] = 1
-          act.vec[pme + cmeind + 1] = 1
-        }
-        if (inta %in% me.idx) {
-          cmeind = (intb - 1) * (2 * (pme - 1)) + (inta -
-                                                     1) * 2 + 1
-          act.vec[pme + cmeind] = 1
-          act.vec[pme + cmeind + 1] = 1
-        }
-      }
-    }
-    int.nidx <- which(int.sel < 0, arr.ind = T)
-    int.nidx <- t(apply(int.nidx, 1, function(xx) {
-      sort(xx)
-    }))
-    int.nidx <- unique(int.nidx)
-    if (nrow(int.nidx) > 0) {
-      for (ii in 1:nrow(int.nidx)) {
-        inta <- int.nidx[ii, 1]
-        intb <- int.nidx[ii, 2]
-        if (inta %in% me.idx) {
-          cmeind = (inta - 1) * (2 * (pme - 1)) + (intb -
-                                                     2) * 2 + 1
-          act.vec[pme + cmeind] = 1
-          act.vec[pme + cmeind + 1] = 1
-        }
-        if (inta %in% me.idx) {
-          cmeind = (intb - 1) * (2 * (pme - 1)) + (inta -
-                                                     1) * 2 + 1
-          act.vec[pme + cmeind] = 1
-          act.vec[pme + cmeind + 1] = 1
-        }
-      }
-    }
+    act.vec[lasind[-1]] <- 1
   }
   start_val <- get_start(cbind(xme, xcme), y,family)
   max.lambda <- start_val$lambda_max
