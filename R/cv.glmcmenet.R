@@ -23,7 +23,7 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
     ncvfit <- ncvreg(cbind(xme,xcme),y,family = family,penalty="MCP")
     ncvind <- which(ncvfit$beta[,which(cvncv$lambda==cvncv$lambda.min)]!=0)
     act.vec <- rep(-1, ncol(xme) + ncol(xcme))
-    act.vec[lasind] <- 1
+    act.vec[ncvind] <- 1
   }
   start_val <- get_start(cbind(xme, xcme), y,family)
   max.lambda <- start_val$lambda_max
