@@ -1,7 +1,7 @@
 cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfolds = 10, var.names = NULL, nlambda.sib = 20,
           nlambda.cou = 20, lambda.min.ratio = 1e-06, ngamma = 20,
           max.gamma = 150, ntau = 20, max.tau = 0.01, tau.min.ratio = 0.01,
-          it.max = 250, it.max.cv = 25, type.measure=c("deviance","class"),warm.str = c("lasso","ncvreg"))
+          it.max = 250, it.max.cv = 25, type.measure=c("deviance","class"),warm.str = c("lasso","ncvreg","grpreg"))
 {
   pme <- ncol(xme)
   pcme <- ncol(xcme)
@@ -17,13 +17,30 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
                                             cvlas$lambda.min)] != 0)
       act.vec <- rep(-1, ncol(xme) + ncol(xcme))
       act.vec[lasind] <- 1
-  }
-  else if (warm.str == "ncvreg") {
+  } else if (warm.str == "ncvreg") {
     cvncv <- cv.ncvreg(cbind(xme,xcme),y,family = family,penalty="MCP")
     ncvfit <- ncvreg(cbind(xme,xcme),y,family = family,penalty="MCP")
     ncvind <- which(ncvfit$beta[,which(cvncv$lambda==cvncv$lambda.min)]!=0)
     act.vec <- rep(-1, ncol(xme) + ncol(xcme))
     act.vec[ncvind] <- 1
+  } else if (warm.str == "grpreg") {
+    tryCatch({
+      # Attempt first option
+      cvgrp <- cv.grpreg(cbind(xme, xcme), y, family = family, penalty = "cMCP")
+      grpfit <- grpreg(cbind(xme, xcme), y, family = family, penalty = "cMCP")
+    }, error = function(e1) {
+      # If an error occurs, try the second option
+      tryCatch({
+        cvgrp <- cv.grpreg(cbind(xme, xcme), y, family = family, penalty = "gel")
+        grpfit <- grpreg(cbind(xme, xcme), y, family = family, penalty = "gel")
+      }, error = function(e2) {
+        # If an error occurs again, print a message
+        print("Invalid warm start, try other warm starts...")
+      })
+    })
+    grpind <- which(grpfit$beta[,which(cvgrp$lambda==cvgrp$lambda.min)]!=0)
+    act.vec <- rep(-1, ncol(xme) + ncol(xcme))
+    act.vec[grpind[-1]] <- 1
   }
   start_val <- get_start(cbind(xme, xcme), y,family)
   max.lambda <- start_val$lambda_max
