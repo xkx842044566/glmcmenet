@@ -12,35 +12,35 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
   act.vec <- rep(-1, ncol(xme) + ncol(xcme))
   if (warm.str == "lasso") {
       cvlas <- cv.glmnet(cbind(xme, xcme), y,family = family)
-      lasfit <- glmnet(cbind(xme, xcme), y,family = family)
+      lasfit <- cv.glmlas$glmnet.fit #glmnet(cbind(xme, xcme), y,family = family)
       lasind <- which(lasfit$beta[, which(cvlas$lambda ==
                                             cvlas$lambda.min)] != 0)
       act.vec <- rep(-1, ncol(xme) + ncol(xcme))
       act.vec[lasind] <- 1
   } else if (warm.str == "ncvreg") {
     cvncv <- cv.ncvreg(cbind(xme,xcme),y,family = family,penalty="MCP")
-    ncvfit <- ncvreg(cbind(xme,xcme),y,family = family,penalty="MCP")
-    ncvind <- which(ncvfit$beta[,which(cvncv$lambda==cvncv$lambda.min)]!=0)
+    ncvfit <-cvncv$fit #ncvreg(cbind(xme,xcme),y,family = family,penalty="MCP")
+    ncvind <- which(ncvfit$beta[,which(cvncv$lambda==cvncv$lambda.min)]!=0)[-1]
     act.vec <- rep(-1, ncol(xme) + ncol(xcme))
     act.vec[ncvind] <- 1
   } else if (warm.str == "grpreg") {
     tryCatch({
       # Attempt first option
       cvgrp <- cv.grpreg(cbind(xme, xcme), y, family = family, penalty = "cMCP")
-      grpfit <- grpreg(cbind(xme, xcme), y, family = family, penalty = "cMCP")
+      grpfit <- cvgrp$fit #grpreg(cbind(xme, xcme), y, family = family, penalty = "cMCP")
     }, error = function(e1) {
       # If an error occurs, try the second option
       tryCatch({
         cvgrp <- cv.grpreg(cbind(xme, xcme), y, family = family, penalty = "gel")
-        grpfit <- grpreg(cbind(xme, xcme), y, family = family, penalty = "gel")
+        grpfit <- cvgrp$fit #grpreg(cbind(xme, xcme), y, family = family, penalty = "gel")
       }, error = function(e2) {
         # If an error occurs again, print a message
         print("Invalid warm start, try other warm starts...")
       })
     })
-    grpind <- which(grpfit$beta[,which(cvgrp$lambda==cvgrp$lambda.min)]!=0)
+    grpind <- which(grpfit$beta[,which(cvgrp$lambda==cvgrp$lambda.min)]!=0)[-1]
     act.vec <- rep(-1, ncol(xme) + ncol(xcme))
-    act.vec[grpind[-1]] <- 1
+    act.vec[grpind] <- 1
   }
   start_val <- get_start(cbind(xme, xcme), y,family)
   max.lambda <- start_val$lambda_max
