@@ -12,7 +12,7 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
   act.vec <- rep(-1, ncol(xme) + ncol(xcme))
   if (warm.str == "lasso") {
       cvlas <- cv.glmnet(cbind(xme, xcme), y,family = family,alpha=1,type.measure = "deviance")
-      lasfit <- cv.glmlas$glmnet.fit
+      lasfit <- cvlas$glmnet.fit
       lasind <- which(lasfit$beta[, which(cvlas$lambda ==cvlas$lambda.min)] != 0)
       act.vec[lasind] <- 1
   } else if (warm.str == "adaptive_lasso") {
@@ -29,16 +29,16 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
                             number = 5,
                             repeats = 5,
                             search = "random",
-                            verboseIter = TRUE)
+                            verboseIter = FALSE)
     # Training ELastic Net Regression model
-    cvela <- train(yglm ~ .,
-                        data = cbind(cbind(xme,xcme), yglm),
+    suppressWarnings(cvela <- train(y ~ .,
+                        data = cbind(cbind(xme,xcme), y),
                         method = "glmnet",
                         family=family,
                         preProcess = c("center", "scale"),
                         tuneLength = 25,
-                        trControl = control)
-    fitela <- glmnet(cbind(xme,xcme),yglm, family=family, alpha=cvela$bestTune$alpha,lambda = cvela$bestTune$lambda)#cv.elastic$finalModel
+                        trControl = control))
+    fitela <- glmnet(cbind(xme,xcme),y, family=family, alpha=cvela$bestTune$alpha,lambda = cvela$bestTune$lambda)#cv.elastic$finalModel
     elaind <- which(fitela$beta!=0)
     act.vec[elaind] <- 1
   } else if (warm.str == "ncvreg") {
