@@ -1,7 +1,7 @@
 cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfolds = 10, var.names = NULL, nlambda.sib = 20,
           nlambda.cou = 20, lambda.min.ratio = 1e-06, ngamma = 20,
           max.gamma = 150, ntau = 20, max.tau = 0.01, tau.min.ratio = 0.01,
-          it.max = 250, it.max.cv = 25, type.measure=c("deviance","class"),warm.str = c("lasso","ncvreg","grpreg"))
+          it.max = 250, it.max.cv = 25, type.measure=c("deviance","class"),warm.str = c("lasso","adaptive_lasso","elastic","ncvreg","grpreg"))
 {
   pme <- ncol(xme)
   pcme <- ncol(xcme)
@@ -11,17 +11,40 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
   min.gamma <- max(max(apply(xmat,2,function(x){8*nrow(xmat)/sum(x^2)}))+ 0.001,1/(0.125 - min.tau) + 0.001)
   act.vec <- rep(-1, ncol(xme) + ncol(xcme))
   if (warm.str == "lasso") {
-      cvlas <- cv.glmnet(cbind(xme, xcme), y,family = family)
-      lasfit <- cv.glmlas$glmnet.fit #glmnet(cbind(xme, xcme), y,family = family)
-      lasind <- which(lasfit$beta[, which(cvlas$lambda ==
-                                            cvlas$lambda.min)] != 0)
-      act.vec <- rep(-1, ncol(xme) + ncol(xcme))
+      cvlas <- cv.glmnet(cbind(xme, xcme), y,family = family,alpha=1,type.measure = "deviance")
+      lasfit <- cv.glmlas$glmnet.fit
+      lasind <- which(lasfit$beta[, which(cvlas$lambda ==cvlas$lambda.min)] != 0)
       act.vec[lasind] <- 1
+  } else if (warm.str == "adaptive_lasso") {
+    cv.ridge <- cv.glmnet(cbind(xme,xcme),y, family=family, alpha=0)
+    w3 <- 1/abs(matrix(coef(cv.ridge, s=cv.ridge$lambda.min)
+                       [, 1][2:(ncol(cbind(xme,xcme))+1)] ))^1 ## Using gamma = 1
+    w3[w3[,1] == Inf] <- 999999999 ## Replacing values estimated as Infinite for 999999999
+    cvaplas <- cv.glmnet(cbind(xme,xcme),yglm,family=family, alpha=1, type.measure='deviance', penalty.factor=w3)
+    aplasfit <- cvaplas$glmnet.fit
+    aplasind <- which(aplasfit$beta[, which(cvaplas$lambda ==cvaplas$lambda.min)] != 0)[-1]
+    act.vec[aplasind] <- 1
+  }else if (warm.str == "elastic") {
+    control <- trainControl(method = "repeatedcv",
+                            number = 5,
+                            repeats = 5,
+                            search = "random",
+                            verboseIter = TRUE)
+    # Training ELastic Net Regression model
+    cvela <- train(yglm ~ .,
+                        data = cbind(cbind(xme,xcme), yglm),
+                        method = "glmnet",
+                        family=family,
+                        preProcess = c("center", "scale"),
+                        tuneLength = 25,
+                        trControl = control)
+    fitela <- glmnet(cbind(xme,xcme),yglm, family=family, alpha=cvela$bestTune$alpha,lambda = cvela$bestTune$lambda)#cv.elastic$finalModel
+    elaind <- which(fitela$beta!=0)
+    act.vec[elaind] <- 1
   } else if (warm.str == "ncvreg") {
     cvncv <- cv.ncvreg(cbind(xme,xcme),y,family = family,penalty="MCP")
-    ncvfit <-cvncv$fit #ncvreg(cbind(xme,xcme),y,family = family,penalty="MCP")
-    ncvind <- which(ncvfit$beta[,which(cvncv$lambda==cvncv$lambda.min)]!=0)[-1]
-    act.vec <- rep(-1, ncol(xme) + ncol(xcme))
+    ncvfit <-cvncv$fit
+    ncvind <- which(ncvfit$beta[,which(cvncv$lambda==cvncv$lambda.min)]!=0)[-1]-1
     act.vec[ncvind] <- 1
   } else if (warm.str == "grpreg") {
     tryCatch({
@@ -38,8 +61,7 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
         print("Invalid warm start, try other warm starts...")
       })
     })
-    grpind <- which(grpfit$beta[,which(cvgrp$lambda==cvgrp$lambda.min)]!=0)[-1]
-    act.vec <- rep(-1, ncol(xme) + ncol(xcme))
+    grpind <- which(grpfit$beta[,which(cvgrp$lambda==cvgrp$lambda.min)]!=0)[-1]-1
     act.vec[grpind] <- 1
   }
   start_val <- get_start(cbind(xme, xcme), y,family)
