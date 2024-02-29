@@ -20,7 +20,7 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
     w3 <- 1/abs(matrix(coef(cv.ridge, s=cv.ridge$lambda.min)
                        [, 1][2:(ncol(cbind(xme,xcme))+1)] ))^1 ## Using gamma = 1
     w3[w3[,1] == Inf] <- 999999999 ## Replacing values estimated as Infinite for 999999999
-    cvaplas <- cv.glmnet(cbind(xme,xcme),yglm,family=family, alpha=1, type.measure='deviance', penalty.factor=w3)
+    cvaplas <- cv.glmnet(cbind(xme,xcme),y,family=family, alpha=1, type.measure='deviance', penalty.factor=w3)
     aplasfit <- cvaplas$glmnet.fit
     aplasind <- which(aplasfit$beta[, which(cvaplas$lambda ==cvaplas$lambda.min)] != 0)[-1]
     act.vec[aplasind] <- 1
