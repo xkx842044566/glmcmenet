@@ -39,7 +39,7 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
                         tuneLength = 25,
                         trControl = control))
     fitela <- glmnet(cbind(xme,xcme),y, family=family, alpha=cvela$bestTune$alpha,lambda = cvela$bestTune$lambda)#cv.elastic$finalModel
-    elaind <- which(fitela$beta!=0)
+    elaind <- fitela$beta@i+1 #which(fitela$beta!=0)
     act.vec[elaind] <- 1
   } else if (warm.str == "ncvreg") {
     cvncv <- cv.ncvreg(cbind(xme,xcme),y,family = family,penalty="MCP")
