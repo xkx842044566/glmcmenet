@@ -1,7 +1,9 @@
 cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfolds = 10, var.names = NULL, nlambda.sib = 20,
           nlambda.cou = 20, lambda.min.ratio = 1e-06, ngamma = 20,
           max.gamma = 150, ntau = 20, max.tau = 0.01, tau.min.ratio = 0.01,
-          it.max = 250, it.max.cv = 25, type.measure=c("deviance","class"),warm.str = c("lasso","adaptive_lasso","elastic","ncvreg","grpreg"))
+          it.max = 250, it.max.cv = 25, type.measure=c("deviance","class"),
+          warm.str = c("lasso","adaptive_lasso","elastic","ncvreg","grpreg"),
+          screen_ind=T)
 {
   pme <- ncol(xme)
   pcme <- ncol(xcme)
@@ -25,21 +27,23 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
     aplasind <- which(aplasfit$beta[, which(cvaplas$lambda ==cvaplas$lambda.min)] != 0)[-1]
     act.vec[aplasind] <- 1
   }else if (warm.str == "elastic") {
-    control <- trainControl(method = "repeatedcv",
-                            number = 5,
-                            repeats = 5,
-                            search = "random",
-                            verboseIter = FALSE)
-    # Training ELastic Net Regression model
-    suppressWarnings(cvela <- train(y ~ .,
-                        data = cbind(cbind(xme,xcme), y),
-                        method = "glmnet",
-                        family=family,
-                        preProcess = c("center", "scale"),
-                        tuneLength = 25,
-                        trControl = control))
-    fitela <- glmnet(cbind(xme,xcme),y, family=family, alpha=cvela$bestTune$alpha,lambda = cvela$bestTune$lambda)#cv.elastic$finalModel
-    elaind <- fitela$beta@i+1 #which(fitela$beta!=0)
+    # control <- trainControl(method = "repeatedcv",
+    #                         number = 5,
+    #                         repeats = 5,
+    #                         search = "random",
+    #                         verboseIter = FALSE)
+    # # Training ELastic Net Regression model
+    # suppressWarnings(cvela <- train(y ~ .,
+    #                     data = cbind(cbind(xme,xcme), y),
+    #                     method = "glmnet",
+    #                     family=family,
+    #                     preProcess = c("center", "scale"),
+    #                     tuneLength = 25,
+    #                     trControl = control))
+    #fitela <- glmnet(cbind(xme,xcme),y, family=family, alpha=cvela$bestTune$alpha,lambda = cvela$bestTune$lambda)#cv.elastic$finalModel
+    cv.ela <- cv.glmnet(cbind(xme,xcme),y, family=family, alpha=0.25)#cv.elastic$finalModel
+    fitela <- cv.ela$glmnet.fit
+    elaind <- which(fitela$beta[,which(cv.ela$lambda==cv.ela$lambda.min)]!=0) #fitela$beta@i+1
     act.vec[elaind] <- 1
   } else if (warm.str == "ncvreg") {
     cvncv <- cv.ncvreg(cbind(xme,xcme),y,family = family,penalty="MCP")
@@ -121,9 +125,9 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
     which = (foldid == i)
     fitobj <- glmcmenet(xme = xme[!which, , drop = F], xcme = xcme[!which,
                                                                 , drop = F], y = y[!which],  family=family,
-                     lambda.sib = parms1.min[1],lambda.cou = parms1.min[2], lambda.flg = F, gamma = gamma_vec,
+                     lambda.sib = parms1.min[1],lambda.cou = parms1.min[2], gamma = gamma_vec,
                      tau = tau_vec, act.vec = act.vec, max.lambda = max.lambda,
-                     it.max = it.max.cv)
+                     it.max = it.max.cv, screen_ind=T)
     xtest <- xmat[which, , drop = F]
     yhat <- predictcme(fitobj, xtest, type="response")
     predmat[which, , ] <- loss(y[which],yhat,family=family,type.measure="deviance")
@@ -158,9 +162,9 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
     which = (foldid == i)
     fitobj <- glmcmenet(xme = xme[!which, , drop = F], xcme = xcme[!which,
                                                                 , drop = F], y = y[!which], family=family,
-                     lambda.sib = lambda.sib,lambda.cou = lambda.cou, lambda.flg = T, gamma = parms2.min[1],
+                     lambda.sib = lambda.sib,lambda.cou = lambda.cou, gamma = parms2.min[1],
                      tau = parms2.min[2], act.vec = act.vec, max.lambda = max.lambda,
-                     it.max = it.max.cv)
+                     it.max = it.max.cv, screen_ind=T)
     xtest <- xmat[which, , drop = F]
     yhat <- predictcme(fitobj, xtest, type="response")
     predmat[which, , ] <- loss(y[which],yhat,family=family,type.measure="deviance")
@@ -182,9 +186,9 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
   #Perform selection on full data with final parameters
   print(paste0("Fitting full data ..."))
   fitall <- glmcmenet(xme = xme, xcme = xcme, y,  family=family, lambda.sib = lambda.sib,
-                   lambda.cou = lambda.cou, lambda.flg = T, gamma = obj$params[3],
+                   lambda.cou = lambda.cou, gamma = obj$params[3],
                    tau = obj$params[4], act.vec = act.vec, max.lambda = max.lambda,
-                   it.max = it.max)
+                   it.max = it.max, screen_ind=T)
   obj$cme.fit <- fitall
   obj$select.idx <- which(fitall$coefficients[, which(lambda.sib ==
                                                         obj$params[1]), which(lambda.cou == obj$params[2])] !=
