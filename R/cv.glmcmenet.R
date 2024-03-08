@@ -127,7 +127,7 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
                                                                 , drop = F], y = y[!which],  family=family,
                      lambda.sib = parms1.min[1],lambda.cou = parms1.min[2], gamma = gamma_vec,
                      tau = tau_vec, act.vec = act.vec, max.lambda = max.lambda,
-                     it.max = it.max.cv, screen_ind=T)
+                     it.max = it.max.cv, screen_ind=screen_ind)
     xtest <- xmat[which, , drop = F]
     yhat <- predictcme(fitobj, xtest, type="response")
     predmat[which, , ] <- loss(y[which],yhat,family=family,type.measure="deviance")
@@ -164,7 +164,7 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
                                                                 , drop = F], y = y[!which], family=family,
                      lambda.sib = lambda.sib,lambda.cou = lambda.cou, gamma = parms2.min[1],
                      tau = parms2.min[2], act.vec = act.vec, max.lambda = max.lambda,
-                     it.max = it.max.cv, screen_ind=T)
+                     it.max = it.max.cv, screen_ind=screen_ind)
     xtest <- xmat[which, , drop = F]
     yhat <- predictcme(fitobj, xtest, type="response")
     predmat[which, , ] <- loss(y[which],yhat,family=family,type.measure="deviance")
@@ -188,7 +188,7 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
   fitall <- glmcmenet(xme = xme, xcme = xcme, y,  family=family, lambda.sib = lambda.sib,
                    lambda.cou = lambda.cou, gamma = obj$params[3],
                    tau = obj$params[4], act.vec = act.vec, max.lambda = max.lambda,
-                   it.max = it.max, screen_ind=T)
+                   it.max = it.max, screen_ind=screen_ind)
   obj$cme.fit <- fitall
   obj$select.idx <- which(fitall$coefficients[, which(lambda.sib ==
                                                         obj$params[1]), which(lambda.cou == obj$params[2])] !=

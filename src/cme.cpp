@@ -1023,12 +1023,12 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
 
       //Copy screening data
       for (int k=0;k<pme;k++){
-        //scr_mat(k,a) = scr_me[k];
-        scr_mat(k,a) = act_me[k];
+        scr_mat(k,a) = scr_me[k];
+        //scr_mat(k,a) = act_me[k];
       }
       for (int k=0;k<pcme;k++){
-        //scr_mat(pme+k,a) = scr_cme[k];
-        scr_mat(pme+k,a) = act_cme[k];
+        scr_mat(pme+k,a) = scr_cme[k];
+        //scr_mat(pme+k,a) = act_cme[k];
       }
 
     }//end nlambda.sib (a)
