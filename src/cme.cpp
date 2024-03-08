@@ -709,6 +709,11 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
   vector<bool> scr_cme(pcme,true);
   bool kkt_bool;
 
+  //Containers for siblings or cousion family
+  vector<int> eff(2*(pme-1));
+  vector<int> sibind(2*(pme-1));
+  vector<int> couind(2*(pme-1));
+
   //Containers for linearized slopes Delta
   vector<double> delta_sib(pme); //Linearized penalty for siblings (sib(A), sib(B), ...)
   vector<double> delta_cou(pme); //Linearized penalty for cousins (cou(A), cou(B), ...)
@@ -780,15 +785,13 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
         gamma = gamma_vec[b];
       }
 
-      if (lambda_it & screen_ind &a>0){
-        //Update screen set
+      //Update screen set
+      if (lambda_it && screen_ind && a>0 && b>0){
+
         int num_scr = 0;
         for (int j=0;j<pme;j++){
 
           int size = 2 * (pme - 1);
-          vector<int> eff(size);
-          vector<int> sibind(size);
-          vector<int> couind(size); // Pre-allocate space for couind
 
           // eff index
           for(int i = 0; i < size; ++i) {
@@ -809,9 +812,10 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
           cj = wcrossprod(X_me, resid, W, nn, j);
           vj = wsqsum(X_me, W, nn, j)/((double)nn);
 
-          if (sum_act(beta_cme,eff)==0) {
+          if (sum_act(beta_cme,sibind)==0) {
             if (sum_act(beta_cme,couind)==0) {
-              thresh = lambda[0]+lambda[1]+vj*gamma/(vj*gamma-2)*(lambda[0]-lambda_sib_vec[a-1]);
+              thresh = max(lambda[0]+lambda[1]+vj*gamma/(vj*gamma-2)*(lambda[0]-lambda_sib_vec[a-1]),
+                           lambda[0]+lambda[1]+vj*gamma/(vj*gamma-2)*(lambda[1]-lambda_cou_vec[b-1]));
               if (abs(cj) > thresh) {
                 scr_me[j] = false;
                 num_scr ++;
@@ -819,7 +823,7 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
                 scr_me[j] = true;
               }
             } else if (sum_act(beta_cme,couind)>0) {
-              thresh = lambda[0]+cur_delta[1]+vj*gamma/(vj*gamma-cur_delta[1]/lambda[1]-1)*(lambda[1]-lambda_cou_vec[b-1]);
+              thresh = lambda[0]+cur_delta[1]+vj*gamma/(vj*gamma-cur_delta[1]/lambda[1]-1)*(lambda[0]-lambda_sib_vec[a-1]);
               if (abs(cj) > thresh) {
                 scr_me[j] = false;
                 num_scr ++;
@@ -830,7 +834,7 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
           }
           else {
             if (sum_act(beta_cme,couind)==0) {
-              thresh = cur_delta[0]+lambda[1]+vj*gamma/(vj*gamma-cur_delta[0]/lambda[0]-1)*(lambda[0]-lambda_sib_vec[a-1]);
+              thresh = cur_delta[0]+lambda[1]+vj*gamma/(vj*gamma-cur_delta[0]/lambda[0]-1)*(lambda[1]-lambda_cou_vec[b-1]);
               if (abs(cj) > thresh) {
                 scr_me[j] = false;
                 num_scr ++;
@@ -840,6 +844,70 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
             }
           }
         }
+
+    for (int j=0;j<pme;j++){ //parent effect
+      for (int k=0;k<(2*(pme-1));k++){ //conditioned effect
+
+          int cmeind = j*(2*(pme-1))+k; //index for CME
+          int condind = floor((double)k/2.0);
+          if (condind >= j){
+              condind ++;
+            }
+
+          int size = 2 * (pme - 1);
+
+          // eff index
+          for(int i = 0; i < size; ++i) {
+            eff[i] = i + 1 ; // eff index
+            sibind[i] = i + j*size;  // sibling index
+          }
+
+          // cousin index
+          for(int jj = 0; jj < size; ++jj) {
+            int halfCeil = std::ceil(static_cast<double>(eff[jj]) / 2);
+            if((condind+1) > halfCeil) {
+              couind[jj] = (halfCeil - 1) * size + (eff[jj] % 2 == 0 ? 1 : 0) + (condind+1 - 2) * 2;
+            } else {
+              couind[jj] = halfCeil * size + (eff[jj] % 2 == 0 ? 1 : 0) + (condind+1 - 1) * 2;
+            }
+          }
+
+          cj = wcrossprod(X_cme, resid, W, nn, cmeind);
+          vj = wsqsum(X_cme, W, nn, cmeind)/((double)nn);
+
+          if (sum_act(beta_cme,sibind)==0) {
+            if (sum_act(beta_cme,couind)==0) {
+              thresh = max(lambda[0]+lambda[1]+vj*gamma/(vj*gamma-2)*(lambda[0]-lambda_sib_vec[a-1]),
+                           lambda[0]+lambda[1]+vj*gamma/(vj*gamma-2)*(lambda[1]-lambda_cou_vec[b-1]));
+              if (abs(cj) > thresh) {
+                scr_cme[cmeind] = false;
+                num_scr ++;
+              }else{
+                scr_cme[cmeind] = true;
+              }
+            } else if (sum_act(beta_cme,couind)>0) {
+              thresh = lambda[0]+cur_delta[1]+vj*gamma/(vj*gamma-cur_delta[1]/lambda[1]-1)*(lambda[0]-lambda_sib_vec[a-1]);
+              if (abs(cj) > thresh) {
+                scr_cme[cmeind] = false;
+                num_scr ++;
+              }else{
+                scr_cme[cmeind] = true;
+              }
+            }
+          }
+          else {
+            if (sum_act(beta_cme,couind)==0) {
+              thresh = cur_delta[0]+lambda[1]+vj*gamma/(vj*gamma-cur_delta[0]/lambda[0]-1)*(lambda[1]-lambda_cou_vec[b-1]);
+              if (abs(cj) > thresh) {
+                scr_me[cmeind] = false;
+                num_scr ++;
+              }else{
+                scr_me[cmeind] = true;
+              }
+            }
+          }
+        }
+      }
       }
 
       //Return trivial solution of \beta=0 when \lambda_s + \lambda_c >= \lambda_max
@@ -928,7 +996,7 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
 
         //Active set reset for it_warm iterations
         for (int m=0; m<it_warm; m++){
-          if (lambda_it & screen_ind &a>0){
+          if (lambda_it && screen_ind && a>0 && b>0){
             chng_flag = coord_des_onerun(pme, nn, lambda, cur_delta, chng_flag, tau, gamma, X_me, X_cme, yy, family,
                                          delta_sib, delta_cou, scr_me, scr_cme, inter, beta_me, beta_cme, eta);
           } else{
@@ -942,12 +1010,16 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
 
         //Update active set
         int num_act = 0;
+        int num_scr = 0;
         for (int j=0;j<pme;j++){
           if ((abs(beta_me[j])>0.0)||(act_vec[j]>0.0)){
             act_me[j] = true;
             num_act ++;
+            scr_me[j] = true;
+            num_scr ++;
           }
           else{
+            scr_me[j] = false;
             act_me[j] = false;
           }
         }
@@ -955,9 +1027,12 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
           if ((abs(beta_cme[j])>0.0)||(act_vec[j+pme]>0.0)){
             act_cme[j] = true;
             num_act ++;
+            scr_cme[j] = true;
+            num_scr ++;
           }
           else{
             act_cme[j] = false;
+            scr_cme[j] = false;
           }
         }
 
@@ -971,8 +1046,13 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
 
           //Increment count and update flags
           it_inner ++;
+          if (lambda_it && screen_ind && a>0 && b>0){
+            chng_flag = coord_des_onerun(pme, nn, lambda, cur_delta, chng_flag, tau, gamma, X_me, X_cme, yy, family,
+                                         delta_sib, delta_cou, scr_me, scr_cme, inter, beta_me, beta_cme, eta);
+          } else {
           chng_flag = coord_des_onerun(pme, nn, lambda, cur_delta, chng_flag, tau, gamma, X_me, X_cme, yy,family,
                                        delta_sib, delta_cou, act_me, act_cme, inter, beta_me, beta_cme, eta);
+          }
 
           //Update cont flag for termination
           if ( (it_inner >= it_max_reset)||(!chng_flag) ){
@@ -1023,12 +1103,18 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
 
       //Copy screening data
       for (int k=0;k<pme;k++){
-        //scr_mat(k,a) = scr_me[k];
-        scr_mat(k,a) = act_me[k];
+        if (lambda_it && screen_ind && a>0 && b>0){
+          scr_mat(k,a) = scr_me[k];
+        } else {
+          scr_mat(k,a) = act_me[k];
+        }
       }
       for (int k=0;k<pcme;k++){
-        //scr_mat(pme+k,a) = scr_cme[k];
-        scr_mat(pme+k,a) = act_cme[k];
+        if (lambda_it && screen_ind && a>0 && b>0){
+          scr_mat(pme+k,a) = scr_cme[k];
+        } else {
+          scr_mat(pme+k,a) = act_cme[k];
+        }
       }
 
     }//end nlambda.sib (a)

@@ -127,7 +127,7 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
                                                                 , drop = F], y = y[!which],  family=family,
                      lambda.sib = parms1.min[1],lambda.cou = parms1.min[2], gamma = gamma_vec,
                      tau = tau_vec, act.vec = act.vec, max.lambda = max.lambda,
-                     it.max = it.max.cv, screen_ind=screen_ind)
+                     it.max = it.max.cv, screen_ind=F)
     xtest <- xmat[which, , drop = F]
     yhat <- predictcme(fitobj, xtest, type="response")
     predmat[which, , ] <- loss(y[which],yhat,family=family,type.measure="deviance")
