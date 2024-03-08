@@ -710,9 +710,9 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
   bool kkt_bool;
 
   //Containers for siblings or cousion family
-  vector<int> eff(2*(pme-1));
-  vector<int> sibind(2*(pme-1));
-  vector<int> couind(2*(pme-1));
+  vector<int> eff(2*(pme-1),0);
+  vector<int> sibind(2*(pme-1),0);
+  vector<int> couind(2*(pme-1),0);
 
   //Containers for linearized slopes Delta
   vector<double> delta_sib(pme); //Linearized penalty for siblings (sib(A), sib(B), ...)
@@ -743,7 +743,9 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
   double cj = 0.0;
   double vj = 0.0;
   double thresh = 0.0; //threshold for screening
+  int size = 0;
   int num_act = 0;
+  int num_scr = 0;
 
   for (int i=0;i<nn;i++){
     ymean += (1.0/(double)nn)*yy[i];
@@ -801,7 +803,7 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
 
           // cousin index
           for(int jj = 0; jj < size; ++jj) {
-            int halfCeil = std::ceil(static_cast<double>(eff[jj]) / 2);
+            int halfCeil = ceil(static_cast<double>(eff[jj]) / 2);
             if((j+1) > halfCeil) {
               couind[jj] = (halfCeil - 1) * size + (eff[jj] % 2 == 0 ? 1 : 0) + (j+1 - 2) * 2;
             } else {
@@ -864,7 +866,7 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
 
           // cousin index
           for(int jj = 0; jj < size; ++jj) {
-            int halfCeil = std::ceil(static_cast<double>(eff[jj]) / 2);
+            int halfCeil = ceil(static_cast<double>(eff[jj]) / 2);
             if((condind+1) > halfCeil) {
               couind[jj] = (halfCeil - 1) * size + (eff[jj] % 2 == 0 ? 1 : 0) + (condind+1 - 2) * 2;
             } else {
