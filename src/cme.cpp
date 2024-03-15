@@ -795,19 +795,17 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
 
           int size = 2 * (pme - 1);
 
-          // eff index
-          for(int i = 0; i < size; ++i) {
-            eff[i] = i + 1 ; // eff index
-            sibind[i] = i + j*size;  // sibling index
-          }
-
           // cousin index
-          for(int jj = 0; jj < size; ++jj) {
-            int halfCeil = ceil(static_cast<double>(eff[jj]) / 2);
+          for(int jj = 0; jj < size; jj++) {
+
+            //eff[jj] = jj + 1 ; // eff index
+            sibind[jj] = jj + j*size;  // sibling index
+
+            int halfCeil = ceil(static_cast<double>(jj+1) / 2);
             if((j+1) > halfCeil) {
-              couind[jj] = (halfCeil - 1) * size + (eff[jj] % 2 == 0 ? 1 : 0) + (j+1 - 2) * 2;
+              couind[jj] = (halfCeil - 1) * size + ((jj+1) % 2 == 0 ? 1 : 0) + (j+1 - 2) * 2;
             } else {
-              couind[jj] = halfCeil * size + (eff[jj] % 2 == 0 ? 1 : 0) + (j+1 - 1) * 2;
+              couind[jj] = halfCeil * size + ((jj+1) % 2 == 0 ? 1 : 0) + (j+1 - 1) * 2;
             }
           }
 
@@ -819,18 +817,18 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
               thresh = max(lambda[0]+lambda[1]+vj*gamma/(vj*gamma-2)*(lambda[0]-lambda_sib_vec[a-1]),
                            lambda[0]+lambda[1]+vj*gamma/(vj*gamma-2)*(lambda[1]-lambda_cou_vec[b-1]));
               if (abs(cj) > thresh) {
-                scr_me[j] = false;
+                scr_me[j] = true;
                 num_scr ++;
               }else{
-                scr_me[j] = true;
+                scr_me[j] = false;
               }
             } else if (sum_act(beta_cme,couind)>0) {
               thresh = lambda[0]+cur_delta[1]+vj*gamma/(vj*gamma-cur_delta[1]/lambda[1]-1)*(lambda[0]-lambda_sib_vec[a-1]);
               if (abs(cj) > thresh) {
-                scr_me[j] = false;
+                scr_me[j] = true;
                 num_scr ++;
               }else{
-                scr_me[j] = true;
+                scr_me[j] = false;
               }
             }
           }
@@ -838,10 +836,10 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
             if (sum_act(beta_cme,couind)==0) {
               thresh = cur_delta[0]+lambda[1]+vj*gamma/(vj*gamma-cur_delta[0]/lambda[0]-1)*(lambda[1]-lambda_cou_vec[b-1]);
               if (abs(cj) > thresh) {
-                scr_me[j] = false;
+                scr_me[j] = true;
                 num_scr ++;
               }else{
-                scr_me[j] = true;
+                scr_me[j] = false;
               }
             }
           }
@@ -858,19 +856,16 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
 
           int size = 2 * (pme - 1);
 
-          // eff index
-          for(int i = 0; i < size; ++i) {
-            eff[i] = i + 1 ; // eff index
-            sibind[i] = i + j*size;  // sibling index
-          }
-
           // cousin index
-          for(int jj = 0; jj < size; ++jj) {
-            int halfCeil = ceil(static_cast<double>(eff[jj]) / 2);
+          for(int jj = 0; jj < size; jj++) {
+
+            sibind[jj] = jj + j*size;  // sibling index
+
+            int halfCeil = ceil(static_cast<double>(jj+1) / 2);
             if((condind+1) > halfCeil) {
-              couind[jj] = (halfCeil - 1) * size + (eff[jj] % 2 == 0 ? 1 : 0) + (condind+1 - 2) * 2;
+              couind[jj] = (halfCeil - 1) * size + ((jj+1) % 2 == 0 ? 1 : 0) + (condind+1 - 2) * 2;
             } else {
-              couind[jj] = halfCeil * size + (eff[jj] % 2 == 0 ? 1 : 0) + (condind+1 - 1) * 2;
+              couind[jj] = halfCeil * size + ((jj+1) % 2 == 0 ? 1 : 0) + (condind+1 - 1) * 2;
             }
           }
 
@@ -882,18 +877,18 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
               thresh = max(lambda[0]+lambda[1]+vj*gamma/(vj*gamma-2)*(lambda[0]-lambda_sib_vec[a-1]),
                            lambda[0]+lambda[1]+vj*gamma/(vj*gamma-2)*(lambda[1]-lambda_cou_vec[b-1]));
               if (abs(cj) > thresh) {
-                scr_cme[cmeind] = false;
+                scr_cme[cmeind] = true;
                 num_scr ++;
               }else{
-                scr_cme[cmeind] = true;
+                scr_cme[cmeind] = false;
               }
             } else if (sum_act(beta_cme,couind)>0) {
               thresh = lambda[0]+cur_delta[1]+vj*gamma/(vj*gamma-cur_delta[1]/lambda[1]-1)*(lambda[0]-lambda_sib_vec[a-1]);
               if (abs(cj) > thresh) {
-                scr_cme[cmeind] = false;
+                scr_cme[cmeind] = true;
                 num_scr ++;
               }else{
-                scr_cme[cmeind] = true;
+                scr_cme[cmeind] = false;
               }
             }
           }
@@ -901,10 +896,10 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
             if (sum_act(beta_cme,couind)==0) {
               thresh = cur_delta[0]+lambda[1]+vj*gamma/(vj*gamma-cur_delta[0]/lambda[0]-1)*(lambda[1]-lambda_cou_vec[b-1]);
               if (abs(cj) > thresh) {
-                scr_me[cmeind] = false;
+                scr_me[cmeind] = true;
                 num_scr ++;
               }else{
-                scr_me[cmeind] = true;
+                scr_me[cmeind] = false;
               }
             }
           }
