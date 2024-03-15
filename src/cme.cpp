@@ -710,7 +710,6 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
   bool kkt_bool;
 
   //Containers for siblings or cousion family
-  vector<int> eff(2*(pme-1),0);
   vector<int> sibind(2*(pme-1),0);
   vector<int> couind(2*(pme-1),0);
 
@@ -896,10 +895,10 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
             if (sum_act(beta_cme,couind)==0) {
               thresh = cur_delta[0]+lambda[1]+vj*gamma/(vj*gamma-cur_delta[0]/lambda[0]-1)*(lambda[1]-lambda_cou_vec[b-1]);
               if (abs(cj) > thresh) {
-                scr_me[cmeind] = true;
+                scr_cme[cmeind] = true;
                 num_scr ++;
               }else{
-                scr_me[cmeind] = false;
+                scr_cme[cmeind] = false;
               }
             }
           }
