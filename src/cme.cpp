@@ -165,7 +165,7 @@ vector<string> splitString(const string& str) {
   parts.push_back(str.substr(pipe_pos + 1, sign_pos - pipe_pos - 1));
 
   // Optionally, extract the sign if needed
-  parts.push_back(str.substr(sign_pos)); // "+" or "-"
+  // parts.push_back(str.substr(sign_pos)); // "+" or "-"
 
   return parts;
 }
@@ -812,7 +812,7 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
   double cj = 0.0;
   double vj = 0.0;
   double thresh = 0.0; //threshold for screening
-  int size = 0;
+  //int size = 0;
   int num_act = 0;
   int num_scr = 0;
 
@@ -874,20 +874,20 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
 
 
             // Proceed only if "|" is found and there are two parts (before and after "|")
-            if (parts.size() == 2) {
-              string beforePipe = parts[0];
-              string afterPipe = parts[1];
+            // if (parts.size() == 2) {
+            string beforePipe = parts[0];
+            string afterPipe = parts[1];
 
-              // If the main effect matches the part before "|", it's a sibling
-              if (beforePipe == me) {
-                sibind.push_back(i); // 0-based indexing
-              }
-
-              // If the main effect matches the part after "|", it's a cousin
-              if (afterPipe == me) {
-                couind.push_back(i); // 0-based indexing
-              }
+            // If the main effect matches the part before "|", it's a sibling
+            if (beforePipe == me) {
+              sibind.push_back(i); // 0-based indexing
             }
+
+            // If the main effect matches the part after "|", it's a cousin
+            if (afterPipe == me) {
+              couind.push_back(i); // 0-based indexing
+            }
+            //}
           }
 
 
@@ -936,7 +936,7 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
 
           string cme = Rcpp::as<string>(names_cme[j]);
           auto parts = splitString(cme);
-          if (parts.size() != 2) continue; // Skip if not a conditional effect
+          // if (parts.size() != 2) continue; // Skip if not a conditional effect
 
           string parent = parts[0], child = parts[1];
 
@@ -945,7 +945,7 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
             if (j == k) continue; // Skip self
             string othercme = Rcpp::as<string>(names_cme[k]);
             auto otherParts = splitString(othercme);
-            if (otherParts.size() != 2) continue;
+            // if (otherParts.size() != 2) continue;
             if (otherParts[0] == parent) {
               sibind.push_back(k); // Siblings: same parent.
             }
@@ -1018,15 +1018,18 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
           }
         }
         num_act = 0;
+        num_scr = 0;
         for (int i=0;i<pme;i++){//reset active flag
           act_me[i] = true;
           scr_me[i] = true;
           num_act ++;
+          num_scr ++;
         }
         for (int i=0;i<pcme;i++){
           act_cme[i] = true;
           scr_cme[i] = true;
           num_act ++;
+          num_scr ++;
         }
         // cout << "num_act: " << num_act << endl;
         if ( (lambda[0]+lambda[1]) >= lambda_max){
@@ -1104,7 +1107,7 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
         int num_act = 0;
         int num_scr = 0;
         for (int j=0;j<pme;j++){
-          if ((abs(beta_me[j])>0.0)||(act_vec[j]>0.0)){
+          if ((abs(beta_me[j])>0.0)){ //||(act_vec[j]>0.0)
             act_me[j] = true;
             num_act ++;
             scr_me[j] = true;
@@ -1116,7 +1119,7 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
           }
         }
         for (int j=0;j<pcme;j++){
-          if ((abs(beta_cme[j])>0.0)||(act_vec[j+pme]>0.0)){
+          if ((abs(beta_cme[j])>0.0)){ //||(act_vec[j+pme]>0.0)
             act_cme[j] = true;
             num_act ++;
             scr_cme[j] = true;
@@ -1155,6 +1158,33 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
 
         // Rcout << accumulate(act_me.begin(),act_me.end(),0) << endl;
         // Rcout << accumulate(act_cme.begin(),act_cme.end(),0) << endl;
+        //Update active set
+        num_act = 0;
+        num_scr = 0;
+        for (int j=0;j<pme;j++){
+          if ((abs(beta_me[j])>0.0)){ //||(act_vec[j]>0.0)
+            act_me[j] = true;
+            num_act ++;
+            scr_me[j] = true;
+            num_scr ++;
+          }
+          else{
+            scr_me[j] = false;
+            act_me[j] = false;
+          }
+        }
+        for (int j=0;j<pcme;j++){
+          if ((abs(beta_cme[j])>0.0)){ //||(act_vec[j+pme]>0.0)
+            act_cme[j] = true;
+            num_act ++;
+            scr_cme[j] = true;
+            num_scr ++;
+          }
+          else{
+            act_cme[j] = false;
+            scr_cme[j] = false;
+          }
+        }
 
       }
 
