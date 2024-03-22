@@ -2,8 +2,8 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
           nlambda.cou = 20, lambda.min.ratio = 1e-06, ngamma = 20,
           max.gamma = 150, ntau = 20, max.tau = 0.01, tau.min.ratio = 0.01,
           it.max = 250, it.max.cv = 25, type.measure=c("deviance","class"),
-          warm.str = c("lasso","adaptive_lasso","elastic","ncvreg","grpreg"),
-          screen_ind=T)
+          warm.str = c("lasso","adaptive_lasso","elastic","ncvreg"),
+          screen_ind=T,str=F)
 {
   pme <- ncol(xme)
   pcme <- ncol(xcme)
@@ -21,7 +21,7 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
     cv.ridge <- cv.glmnet(cbind(xme,xcme),y, family=family, alpha=0)
     w3 <- 1/abs(matrix(coef(cv.ridge, s=cv.ridge$lambda.min)
                        [, 1][2:(ncol(cbind(xme,xcme))+1)] ))^1 ## Using gamma = 1
-    w3[w3[,1] == Inf] <- 999999999 ## Replacing values estimated as Infinite for 999999999
+    w3[w3[,1] == Inf] <- 999999999
     cvaplas <- cv.glmnet(cbind(xme,xcme),y,family=family, alpha=1, type.measure='deviance', penalty.factor=w3)
     aplasfit <- cvaplas$glmnet.fit
     aplasind <- which(aplasfit$beta[, which(cvaplas$lambda ==cvaplas$lambda.min)] != 0)[-1]
@@ -50,23 +50,6 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
     ncvfit <-cvncv$fit
     ncvind <- which(ncvfit$beta[,which(cvncv$lambda==cvncv$lambda.min)]!=0)[-1]-1
     act.vec[ncvind] <- 1
-  } else if (warm.str == "grpreg") {
-    tryCatch({
-      # Attempt first option
-      cvgrp <- cv.grpreg(cbind(xme, xcme), y, family = family, penalty = "cMCP")
-      grpfit <- cvgrp$fit #grpreg(cbind(xme, xcme), y, family = family, penalty = "cMCP")
-    }, error = function(e1) {
-      # If an error occurs, try the second option
-      tryCatch({
-        cvgrp <- cv.grpreg(cbind(xme, xcme), y, family = family, penalty = "gel")
-        grpfit <- cvgrp$fit #grpreg(cbind(xme, xcme), y, family = family, penalty = "gel")
-      }, error = function(e2) {
-        # If an error occurs again, print a message
-        print("Invalid warm start, try other warm starts...")
-      })
-    })
-    grpind <- which(grpfit$beta[,which(cvgrp$lambda==cvgrp$lambda.min)]!=0)[-1]-1
-    act.vec[grpind] <- 1
   }
   start_val <- get_start(cbind(xme, xcme), y,family)
   max.lambda <- start_val$lambda_max
@@ -123,11 +106,10 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
   for (i in seq(nfolds)) {
     setTxtProgressBar(pb, i/nfolds)
     which = (foldid == i)
-    fitobj <- glmcmenet(xme = xme[!which, , drop = F], xcme = xcme[!which,
-                                                                , drop = F], y = y[!which],  family=family,
+    fitobj <- glmcmenet(xme = xme[!which, , drop = F], xcme = xcme[!which,, drop = F], y = y[!which],  family=family,
                      lambda.sib = parms1.min[1],lambda.cou = parms1.min[2], gamma = gamma_vec,
                      tau = tau_vec, act.vec = act.vec, max.lambda = max.lambda,
-                     it.max = it.max.cv, screen_ind=F)
+                     it.max = it.max.cv, screen_ind=F,str=str)
     xtest <- xmat[which, , drop = F]
     yhat <- predictcme(fitobj, xtest, type="response")
     predmat[which, , ] <- loss(y[which],yhat,family=family,type.measure="deviance")
@@ -164,7 +146,7 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
                                                                 , drop = F], y = y[!which], family=family,
                      lambda.sib = lambda.sib,lambda.cou = lambda.cou, gamma = parms2.min[1],
                      tau = parms2.min[2], act.vec = act.vec, max.lambda = max.lambda,
-                     it.max = it.max.cv, screen_ind=screen_ind)
+                     it.max = it.max.cv, screen_ind=screen_ind,str=str)
     xtest <- xmat[which, , drop = F]
     yhat <- predictcme(fitobj, xtest, type="response")
     predmat[which, , ] <- loss(y[which],yhat,family=family,type.measure="deviance")
@@ -188,7 +170,7 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
   fitall <- glmcmenet(xme = xme, xcme = xcme, y,  family=family, lambda.sib = lambda.sib,
                    lambda.cou = lambda.cou, gamma = obj$params[3],
                    tau = obj$params[4], act.vec = act.vec, max.lambda = max.lambda,
-                   it.max = it.max, screen_ind=screen_ind)
+                   it.max = it.max, screen_ind=screen_ind,str=str)
   obj$cme.fit <- fitall
   obj$select.idx <- which(fitall$coefficients[, which(lambda.sib ==
                                                         obj$params[1]), which(lambda.cou == obj$params[2])] !=
