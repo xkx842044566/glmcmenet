@@ -3,7 +3,7 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
           max.gamma = 150, ntau = 20, max.tau = 0.01, tau.min.ratio = 0.01,
           it.max = 250, it.max.cv = 25, type.measure=c("deviance","class"),
           warm.str = c("lasso","adaptive_lasso","elastic","ncvreg"),
-          screen_ind=T,str=F)
+          screen_ind=F,str=F)
 {
   pme <- ncol(xme)
   pcme <- ncol(xcme)

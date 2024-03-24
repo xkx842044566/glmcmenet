@@ -1148,66 +1148,69 @@ List cme_str(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Cha
         int num_scr = 0;
         for (int j=0;j<pme;j++){
 
-          string me = Rcpp::as<string>(names_me[j]);
+          if(act_me[j] && scr_me[j]){
 
-          sibind.clear();
-          couind.clear();
+            string me = Rcpp::as<string>(names_me[j]);
 
-          // Iterate over each column name in XX_cme to find siblings for the current main effect
-          for (int i = 0; i < pcme; i++) {
-            string colName = Rcpp::as<string>(names_cme[i]);
-            auto parts = splitString(colName); // Use splitString function here
+            sibind.clear();
+            couind.clear();
 
-
-            // Proceed only if "|" is found and there are two parts (before and after "|")
-            // if (parts.size() == 2) {
-            string beforePipe = parts[0];
-            string afterPipe = parts[1];
-
-            // If the main effect matches the part before "|", it's a sibling
-            if (beforePipe == me) {
-              sibind.push_back(i); // 0-based indexing
-            }
-
-            // If the main effect matches the part after "|", it's a cousin
-            if (afterPipe == me) {
-              couind.push_back(i); // 0-based indexing
-            }
-            //}
-          }
+            // Iterate over each column name in XX_cme to find siblings for the current main effect
+            for (int i = 0; i < pcme; i++) {
+              string colName = Rcpp::as<string>(names_cme[i]);
+              auto parts = splitString(colName); // Use splitString function here
 
 
-          cj = wcrossprod(X_me, resid, W, nn, j);
-          vj = wsqsum(X_me, W, nn, j)/((double)nn);
+              // Proceed only if "|" is found and there are two parts (before and after "|")
+              // if (parts.size() == 2) {
+              string beforePipe = parts[0];
+              string afterPipe = parts[1];
 
-          if (sum_act(beta_cme,sibind)==0) {
-            if (sum_act(beta_cme,couind)==0) {
-              thresh = max(lambda[0]+lambda[1]+vj*gamma/(vj*gamma-2)*(lambda[0]-lambda_sib_vec[a-1]),
-                           lambda[0]+lambda[1]+vj*gamma/(vj*gamma-2)*(lambda[1]-lambda_cou_vec[b-1]));
-              if (abs(cj) > thresh) {
-                scr_me[j] = true;
-                num_scr ++;
-              }else{
-                scr_me[j] = false;
+              // If the main effect matches the part before "|", it's a sibling
+              if (beforePipe == me) {
+                sibind.push_back(i); // 0-based indexing
               }
-            } else if (sum_act(beta_cme,couind)>0) {
-              thresh = lambda[0]+cur_delta[1]+vj*gamma/(vj*gamma-cur_delta[1]/lambda[1]-1)*(lambda[0]-lambda_sib_vec[a-1]);
-              if (abs(cj) > thresh) {
-                scr_me[j] = true;
-                num_scr ++;
-              }else{
-                scr_me[j] = false;
+
+              // If the main effect matches the part after "|", it's a cousin
+              if (afterPipe == me) {
+                couind.push_back(i); // 0-based indexing
+              }
+              //}
+            }
+
+
+            cj = wcrossprod(X_me, resid, W, nn, j);
+            vj = wsqsum(X_me, W, nn, j)/((double)nn);
+
+            if (sum_act(beta_cme,sibind)==0) {
+              if (sum_act(beta_cme,couind)==0) {
+                thresh = max(lambda[0]+lambda[1]+vj*gamma/(vj*gamma-2)*(lambda[0]-lambda_sib_vec[a-1]),
+                             lambda[0]+lambda[1]+vj*gamma/(vj*gamma-2)*(lambda[1]-lambda_cou_vec[b-1]));
+                if (abs(cj) > thresh) {
+                  scr_me[j] = true;
+                  num_scr ++;
+                }else{
+                  scr_me[j] = false;
+                }
+              } else if (sum_act(beta_cme,couind)>0) {
+                thresh = lambda[0]+cur_delta[1]+vj*gamma/(vj*gamma-cur_delta[1]/lambda[1]-1)*(lambda[0]-lambda_sib_vec[a-1]);
+                if (abs(cj) > thresh) {
+                  scr_me[j] = true;
+                  num_scr ++;
+                }else{
+                  scr_me[j] = false;
+                }
               }
             }
-          }
-          else {
-            if (sum_act(beta_cme,couind)==0) {
-              thresh = cur_delta[0]+lambda[1]+vj*gamma/(vj*gamma-cur_delta[0]/lambda[0]-1)*(lambda[1]-lambda_cou_vec[b-1]);
-              if (abs(cj) > thresh) {
-                scr_me[j] = true;
-                num_scr ++;
-              }else{
-                scr_me[j] = false;
+            else {
+              if (sum_act(beta_cme,couind)==0) {
+                thresh = cur_delta[0]+lambda[1]+vj*gamma/(vj*gamma-cur_delta[0]/lambda[0]-1)*(lambda[1]-lambda_cou_vec[b-1]);
+                if (abs(cj) > thresh) {
+                  scr_me[j] = true;
+                  num_scr ++;
+                }else{
+                  scr_me[j] = false;
+                }
               }
             }
           }
@@ -1220,59 +1223,62 @@ List cme_str(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Cha
           sibind.clear();
           couind.clear();
 
-          string cme = Rcpp::as<string>(names_cme[j]);
-          auto parts = splitString(cme);
-          // if (parts.size() != 2) continue; // Skip if not a conditional effect
+          if(act_cme[j] && scr_cme[j]){
 
-          string parent = parts[0], child = parts[1];
+            string cme = Rcpp::as<string>(names_cme[j]);
+            auto parts = splitString(cme);
+            // if (parts.size() != 2) continue; // Skip if not a conditional effect
 
-          // siblings[colName].push_back(parent); // Add parent as a sibling
-          for (int k = 0; k < pcme; k++) {
-            if (j == k) continue; // Skip self
-            string othercme = Rcpp::as<string>(names_cme[k]);
-            auto otherParts = splitString(othercme);
-            // if (otherParts.size() != 2) continue;
-            if (otherParts[0] == parent) {
-              sibind.push_back(k); // Siblings: same parent.
-            }
-            if (otherParts[1] == child) {
-              couind.push_back(k); // Cousins: same child.
-            }
+            string parent = parts[0], child = parts[1];
 
-          }
-
-
-          cj = wcrossprod(X_cme, resid, W, nn, j);
-          vj = wsqsum(X_cme, W, nn, j)/((double)nn);
-
-          if (sum_act(beta_cme,sibind)==0) {
-            if (sum_act(beta_cme,couind)==0) {
-              thresh = max(lambda[0]+lambda[1]+vj*gamma/(vj*gamma-2)*(lambda[0]-lambda_sib_vec[a-1]),
-                           lambda[0]+lambda[1]+vj*gamma/(vj*gamma-2)*(lambda[1]-lambda_cou_vec[b-1]));
-              if (abs(cj) > thresh) {
-                scr_cme[j] = true;
-                num_scr ++;
-              }else{
-                scr_cme[j] = false;
+            // siblings[colName].push_back(parent); // Add parent as a sibling
+            for (int k = 0; k < pcme; k++) {
+              if (j == k) continue; // Skip self
+              string othercme = Rcpp::as<string>(names_cme[k]);
+              auto otherParts = splitString(othercme);
+              // if (otherParts.size() != 2) continue;
+              if (otherParts[0] == parent) {
+                sibind.push_back(k); // Siblings: same parent.
               }
-            } else if (sum_act(beta_cme,couind)>0) {
-              thresh = lambda[0]+cur_delta[1]+vj*gamma/(vj*gamma-cur_delta[1]/lambda[1]-1)*(lambda[0]-lambda_sib_vec[a-1]);
-              if (abs(cj) > thresh) {
-                scr_cme[j] = true;
-                num_scr ++;
-              }else{
-                scr_cme[j] = false;
+              if (otherParts[1] == child) {
+                couind.push_back(k); // Cousins: same child.
+              }
+
+            }
+
+
+            cj = wcrossprod(X_cme, resid, W, nn, j);
+            vj = wsqsum(X_cme, W, nn, j)/((double)nn);
+
+            if (sum_act(beta_cme,sibind)==0) {
+              if (sum_act(beta_cme,couind)==0) {
+                thresh = max(lambda[0]+lambda[1]+vj*gamma/(vj*gamma-2)*(lambda[0]-lambda_sib_vec[a-1]),
+                             lambda[0]+lambda[1]+vj*gamma/(vj*gamma-2)*(lambda[1]-lambda_cou_vec[b-1]));
+                if (abs(cj) > thresh) {
+                  scr_cme[j] = true;
+                  num_scr ++;
+                }else{
+                  scr_cme[j] = false;
+                }
+              } else if (sum_act(beta_cme,couind)>0) {
+                thresh = lambda[0]+cur_delta[1]+vj*gamma/(vj*gamma-cur_delta[1]/lambda[1]-1)*(lambda[0]-lambda_sib_vec[a-1]);
+                if (abs(cj) > thresh) {
+                  scr_cme[j] = true;
+                  num_scr ++;
+                }else{
+                  scr_cme[j] = false;
+                }
               }
             }
-          }
-          else {
-            if (sum_act(beta_cme,couind)==0) {
-              thresh = cur_delta[0]+lambda[1]+vj*gamma/(vj*gamma-cur_delta[0]/lambda[0]-1)*(lambda[1]-lambda_cou_vec[b-1]);
-              if (abs(cj) > thresh) {
-                scr_cme[j] = true;
-                num_scr ++;
-              }else{
-                scr_cme[j] = false;
+            else {
+              if (sum_act(beta_cme,couind)==0) {
+                thresh = cur_delta[0]+lambda[1]+vj*gamma/(vj*gamma-cur_delta[0]/lambda[0]-1)*(lambda[1]-lambda_cou_vec[b-1]);
+                if (abs(cj) > thresh) {
+                  scr_cme[j] = true;
+                  num_scr ++;
+                }else{
+                  scr_cme[j] = false;
+                }
               }
             }
           }
@@ -1798,59 +1804,61 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
         int num_scr = 0;
         for (int j=0;j<pme;j++){
 
-          int size = 2 * (pme - 1);
-          vector<int> eff(size);
-          vector<int> sibind(size);
-          vector<int> couind(size); // Pre-allocate space for couind
+          if (act_me[j] && scr_me[j]){
+            int size = 2 * (pme - 1);
+            vector<int> eff(size);
+            vector<int> sibind(size);
+            vector<int> couind(size); // Pre-allocate space for couind
 
-          // eff index
-          for(int i = 0; i < size; ++i) {
-            eff[i] = i + 1 ; // eff index
-            sibind[i] = i + j*size;  // sibling index
-          }
-
-          // cousin index
-          for(int jj = 0; jj < size; ++jj) {
-            int halfCeil = std::ceil(static_cast<double>(eff[jj]) / 2);
-            if((j+1) > halfCeil) {
-              couind[jj] = (halfCeil - 1) * size + (eff[jj] % 2 == 0 ? 1 : 0) + (j+1 - 2) * 2;
-            } else {
-              couind[jj] = halfCeil * size + (eff[jj] % 2 == 0 ? 1 : 0) + (j+1 - 1) * 2;
+            // eff index
+            for(int i = 0; i < size; ++i) {
+              eff[i] = i + 1 ; // eff index
+              sibind[i] = i + j*size;  // sibling index
             }
-          }
 
-
-          cj = wcrossprod(X_me, resid, W, nn, j);
-          vj = wsqsum(X_me, W, nn, j)/((double)nn);
-
-          if (sum_act(beta_cme,sibind)==0) {
-            if (sum_act(beta_cme,couind)==0) {
-              thresh = max(lambda[0]+lambda[1]+vj*gamma/(vj*gamma-2)*(lambda[0]-lambda_sib_vec[a-1]),
-                           lambda[0]+lambda[1]+vj*gamma/(vj*gamma-2)*(lambda[1]-lambda_cou_vec[b-1]));
-              if (abs(cj) > thresh) {
-                scr_me[j] = true;
-                num_scr ++;
-              }else{
-                scr_me[j] = false;
-              }
-            } else if (sum_act(beta_cme,couind)>0) {
-              thresh = lambda[0]+cur_delta[1]+vj*gamma/(vj*gamma-cur_delta[1]/lambda[1]-1)*(lambda[0]-lambda_sib_vec[a-1]);
-              if (abs(cj) > thresh) {
-                scr_me[j] = true;
-                num_scr ++;
-              }else{
-                scr_me[j] = false;
+            // cousin index
+            for(int jj = 0; jj < size; ++jj) {
+              int halfCeil = std::ceil(static_cast<double>(eff[jj]) / 2);
+              if((j+1) > halfCeil) {
+                couind[jj] = (halfCeil - 1) * size + (eff[jj] % 2 == 0 ? 1 : 0) + (j+1 - 2) * 2;
+              } else {
+                couind[jj] = halfCeil * size + (eff[jj] % 2 == 0 ? 1 : 0) + (j+1 - 1) * 2;
               }
             }
-          }
-          else {
-            if (sum_act(beta_cme,couind)==0) {
-              thresh = cur_delta[0]+lambda[1]+vj*gamma/(vj*gamma-cur_delta[0]/lambda[0]-1)*(lambda[1]-lambda_cou_vec[b-1]);
-              if (abs(cj) > thresh) {
-                scr_me[j] = true;
-                num_scr ++;
-              }else{
-                scr_me[j] = false;
+
+
+            cj = wcrossprod(X_me, resid, W, nn, j);
+            vj = wsqsum(X_me, W, nn, j)/((double)nn);
+
+            if (sum_act(beta_cme,sibind)==0) {
+              if (sum_act(beta_cme,couind)==0) {
+                thresh = max(lambda[0]+lambda[1]+vj*gamma/(vj*gamma-2)*(lambda[0]-lambda_sib_vec[a-1]),
+                             lambda[0]+lambda[1]+vj*gamma/(vj*gamma-2)*(lambda[1]-lambda_cou_vec[b-1]));
+                if (abs(cj) > thresh) {
+                  scr_me[j] = true;
+                  num_scr ++;
+                }else{
+                  scr_me[j] = false;
+                }
+              } else if (sum_act(beta_cme,couind)>0) {
+                thresh = lambda[0]+cur_delta[1]+vj*gamma/(vj*gamma-cur_delta[1]/lambda[1]-1)*(lambda[0]-lambda_sib_vec[a-1]);
+                if (abs(cj) > thresh) {
+                  scr_me[j] = true;
+                  num_scr ++;
+                }else{
+                  scr_me[j] = false;
+                }
+              }
+            }
+            else {
+              if (sum_act(beta_cme,couind)==0) {
+                thresh = cur_delta[0]+lambda[1]+vj*gamma/(vj*gamma-cur_delta[0]/lambda[0]-1)*(lambda[1]-lambda_cou_vec[b-1]);
+                if (abs(cj) > thresh) {
+                  scr_me[j] = true;
+                  num_scr ++;
+                }else{
+                  scr_me[j] = false;
+                }
               }
             }
           }
@@ -1861,58 +1869,61 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
             //for (int j=0; j<pcme; j++){
 
             int cmeind = j*(2*(pme-1))+k; //index for CME
-            int condind = floor((double)k/2.0);
-            if (condind >= j){
-              condind ++;
-            }
 
-            int size = 2 * (pme - 1);
-
-            // cousin index
-            for(int jj = 0; jj < size; jj++) {
-
-              sibind[jj] = jj + j*size;  // sibling index
-
-              int halfCeil = ceil(static_cast<double>(jj+1) / 2);
-              if((condind+1) > halfCeil) {
-                couind[jj] = (halfCeil - 1) * size + ((jj+1) % 2 == 0 ? 1 : 0) + (condind+1 - 2) * 2;
-              } else {
-                couind[jj] = halfCeil * size + ((jj+1) % 2 == 0 ? 1 : 0) + (condind+1 - 1) * 2;
+            if (act_cme[cmeind] && scr_cme[cmeind]){
+              int condind = floor((double)k/2.0);
+              if (condind >= j){
+                condind ++;
               }
-            }
 
+              int size = 2 * (pme - 1);
 
-            cj = wcrossprod(X_cme, resid, W, nn, cmeind);
-            vj = wsqsum(X_cme, W, nn, cmeind)/((double)nn);
+              // cousin index
+              for(int jj = 0; jj < size; jj++) {
 
-            if (sum_act(beta_cme,sibind)==0) {
-              if (sum_act(beta_cme,couind)==0) {
-                thresh = max(lambda[0]+lambda[1]+vj*gamma/(vj*gamma-2)*(lambda[0]-lambda_sib_vec[a-1]),
-                             lambda[0]+lambda[1]+vj*gamma/(vj*gamma-2)*(lambda[1]-lambda_cou_vec[b-1]));
-                if (abs(cj) > thresh) {
-                  scr_cme[cmeind] = true;
-                  num_scr ++;
-                }else{
-                  scr_cme[cmeind] = false;
-                }
-              } else if (sum_act(beta_cme,couind)>0) {
-                thresh = lambda[0]+cur_delta[1]+vj*gamma/(vj*gamma-cur_delta[1]/lambda[1]-1)*(lambda[0]-lambda_sib_vec[a-1]);
-                if (abs(cj) > thresh) {
-                  scr_cme[cmeind] = true;
-                  num_scr ++;
-                }else{
-                  scr_cme[cmeind] = false;
+                sibind[jj] = jj + j*size;  // sibling index
+
+                int halfCeil = ceil(static_cast<double>(jj+1) / 2);
+                if((condind+1) > halfCeil) {
+                  couind[jj] = (halfCeil - 1) * size + ((jj+1) % 2 == 0 ? 1 : 0) + (condind+1 - 2) * 2;
+                } else {
+                  couind[jj] = halfCeil * size + ((jj+1) % 2 == 0 ? 1 : 0) + (condind+1 - 1) * 2;
                 }
               }
-            }
-            else {
-              if (sum_act(beta_cme,couind)==0) {
-                thresh = cur_delta[0]+lambda[1]+vj*gamma/(vj*gamma-cur_delta[0]/lambda[0]-1)*(lambda[1]-lambda_cou_vec[b-1]);
-                if (abs(cj) > thresh) {
-                  scr_cme[cmeind] = true;
-                  num_scr ++;
-                }else{
-                  scr_cme[cmeind] = false;
+
+
+              cj = wcrossprod(X_cme, resid, W, nn, cmeind);
+              vj = wsqsum(X_cme, W, nn, cmeind)/((double)nn);
+
+              if (sum_act(beta_cme,sibind)==0) {
+                if (sum_act(beta_cme,couind)==0) {
+                  thresh = max(lambda[0]+lambda[1]+vj*gamma/(vj*gamma-2)*(lambda[0]-lambda_sib_vec[a-1]),
+                               lambda[0]+lambda[1]+vj*gamma/(vj*gamma-2)*(lambda[1]-lambda_cou_vec[b-1]));
+                  if (abs(cj) > thresh) {
+                    scr_cme[cmeind] = true;
+                    num_scr ++;
+                  }else{
+                    scr_cme[cmeind] = false;
+                  }
+                } else if (sum_act(beta_cme,couind)>0) {
+                  thresh = lambda[0]+cur_delta[1]+vj*gamma/(vj*gamma-cur_delta[1]/lambda[1]-1)*(lambda[0]-lambda_sib_vec[a-1]);
+                  if (abs(cj) > thresh) {
+                    scr_cme[cmeind] = true;
+                    num_scr ++;
+                  }else{
+                    scr_cme[cmeind] = false;
+                  }
+                }
+              }
+              else {
+                if (sum_act(beta_cme,couind)==0) {
+                  thresh = cur_delta[0]+lambda[1]+vj*gamma/(vj*gamma-cur_delta[0]/lambda[0]-1)*(lambda[1]-lambda_cou_vec[b-1]);
+                  if (abs(cj) > thresh) {
+                    scr_cme[cmeind] = true;
+                    num_scr ++;
+                  }else{
+                    scr_cme[cmeind] = false;
+                  }
                 }
               }
             }

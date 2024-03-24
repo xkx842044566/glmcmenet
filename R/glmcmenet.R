@@ -3,7 +3,7 @@ glmcmenet <- function (xme, xcme, y, family=c("binomial", "poisson"),
                        lambda.cou = exp(seq(from = log(max.lambda),to = log(max.lambda * 1e-06), length = 10)),
                        max.lambda = lambda0.cme(cbind(xme,xcme), y), gamma = 1/(0.125 - tau) + 0.001, tau = 0.01,
                        act.vec = rep(1,ncol(xme) + ncol(xcme)), beta0 = rep(0, ncol(xme) + ncol(xcme)),
-          it.max = 250, screen_ind=T,str=F)
+          it.max = 250, screen_ind=F,str=F)
 {
   family <- match.arg(family)
   idx.constme <- which(apply(xme, 2, function(xx) {
@@ -22,12 +22,12 @@ glmcmenet <- function (xme, xcme, y, family=c("binomial", "poisson"),
   xcme[, idx.constcme] <- 0
   xme.sl[idx.constme] <- 1
   xcme.sl[idx.constcme] <- 1
-  if (str==F) {
-    ret <- cme(xme.sc, xcme.sc, y, family, lambda.sib, lambda.cou, gamma,
+  if (str) {
+    ret <- cme_str(xme.sc, xcme.sc, y, family, lambda.sib, lambda.cou, gamma,
              tau, xme.sl, xcme.sl, beta0, act.vec, max.lambda, it.max,
              it_warm=3, reset=1, screen_ind)
   } else {
-    ret <- cme_str(xme.sc, xcme.sc, y, family, lambda.sib, lambda.cou, gamma,
+    ret <- cme(xme.sc, xcme.sc, y, family, lambda.sib, lambda.cou, gamma,
                tau, xme.sl, xcme.sl, beta0, act.vec, max.lambda, it.max,
                it_warm=3, reset=1, screen_ind)
   }
