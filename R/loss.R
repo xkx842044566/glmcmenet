@@ -10,6 +10,6 @@ loss <- function(y,yhat,family,type.measure=c("deviance","class")){
      }
   }else if(type.measure=="class"){
     val <- array(NA, dim = dim(yhat))
-    if (family=="binomial") {val <- (yhat < 0.5) != y} else NULL
+    if (family=="binomial") {val <- (yhat < 0.5) == y} else NULL
   }
 }
