@@ -1,6 +1,6 @@
 cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfolds = 10, var.names = NULL, nlambda.sib = 20,
           nlambda.cou = 20, lambda.min.ratio = 1e-06, ngamma = 20,
-          max.gamma = 150, ntau = 20, max.tau = 0.01, tau.min.ratio = 0.01,
+          max.gamma = 150, ntau = 20, max.tau = 0.2, tau.min.ratio = 0.001,
           it.max = 250, it.max.cv = 25, type.measure=c("deviance","class"),
           warm.str = c("lasso","adaptive_lasso","elastic","ncvreg"),
           screen_ind=F,str=F)
@@ -52,7 +52,7 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
     act.vec[ncvind] <- 1
   }
   start_val <- get_start(cbind(xme, xcme), y,family)
-  max.lambda <- start_val$lambda_max
+  max.lambda <- 0.5*start_val$lambda_max
   lambda.sib <- exp(seq(from = log(max.lambda), to = log(max.lambda *
                                                            lambda.min.ratio), length = nlambda.sib))
   lambda.cou <- exp(seq(from = log(max.lambda), to = log(max.lambda *
