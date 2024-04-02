@@ -1,13 +1,3 @@
-# dev_function <- function(y, mu, family) {
-#   if (family == "binomial") {
-#     # Binomial deviance
-#     return(sum((y * log(y / mu) + (1 - y) * log((1 - y) / (1 - mu)))))
-#   } else if (family == "poisson") {
-#     # Poisson deviance
-#     return(sum((y * log(y / mu) - (y - mu))))
-#   }
-# }
-
 get_start <- function(x, y, family, intercept) {
   nobs <- nrow(x); nvars <- ncol(x)
 
