@@ -2,7 +2,7 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
           nlambda.cou = 20, lambda.min.ratio = 1e-06, ngamma = 20,
           max.gamma = 150, ntau = 20, max.tau = 0.2, tau.min.ratio = 0.001,
           it.max = 250, it.max.cv = 25, type.measure=c("deviance","class"),
-          warm.str = c("lasso","adaptive_lasso","elastic","ncvreg"),penalty.factor=rep(1,ncol(xme) + ncol(xcme)),
+          warm.str = c("lasso","adaptive_lasso","elastic","ncvreg","NULL"),penalty.factor=rep(1,ncol(xme) + ncol(xcme)),
           screen_ind=F,str=F)
 {
   pme <- ncol(xme)
@@ -50,6 +50,8 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
     ncvfit <-cvncv$fit
     ncvind <- which(ncvfit$beta[,which(cvncv$lambda==cvncv$lambda.min)]!=0)[-1]-1
     act.vec[ncvind] <- 1
+  } else if (warm.str == "NULL") {
+    act.vec <- rep(1, ncol(xme) + ncol(xcme))
   }
   start_val <- get_start(cbind(xme, xcme), y,family)
   max.lambda <- 0.5*start_val$lambda_max
