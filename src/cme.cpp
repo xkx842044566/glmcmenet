@@ -1959,7 +1959,7 @@ List cme(NumericMatrix& XX, NumericVector& yy, CharacterVector& family,
         //   num_act ++;
         //   num_scr ++;
         // }
-        cout << "num_act: " << num_act << endl;
+        //cout << "num_act: " << num_act << endl;
         if ( (lambda[0]+lambda[1]) >= lambda_max){
           goto cycend;
         }
@@ -2053,7 +2053,7 @@ List cme(NumericMatrix& XX, NumericVector& yy, CharacterVector& family,
         chng_flag = false; //change flag
 
         while (cont){
-          cout << "it_inner: " << it_inner << endl;
+          //cout << "it_inner: " << it_inner << endl;
 
           //Increment count and update flags
           it_inner ++;
@@ -2072,7 +2072,7 @@ List cme(NumericMatrix& XX, NumericVector& yy, CharacterVector& family,
         }//end while
 
 
-        Rcout << accumulate(act.begin(),act.end(),0) << endl;
+        //Rcout << accumulate(act.begin(),act.end(),0) << endl;
         //Update active set
         num_act = 0;
         num_scr = 0;
