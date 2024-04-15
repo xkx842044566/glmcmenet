@@ -656,13 +656,14 @@ bool coord_des_onerun_str(int pme, int pcme, int nn, NumericVector& lambda, Nume
 
 
 //One run of coordinate descent under default structure
-bool coord_des_onerun(int pme, int pcme, int nn, NumericVector& lambda, NumericVector& cur_delta,
+bool coord_des_onerun(int pme, int nn, NumericVector& K1,
+                      NumericVector& lambda, NumericVector& cur_delta,
                       bool dummy, double tau, double gamma,
-                      vector<double>& X_me, vector<double>& X_cme, NumericVector& yy,
+                      vector<double>& X, NumericVector& yy,
                       CharacterVector& family,
                       vector<double>& delta_sib, vector<double>& delta_cou,
-                      vector<bool>& act_me, vector<bool>& act_cme, double& inter,
-                      vector<double>& beta_me, vector<double>& beta_cme, vector<double>& m_me, vector<double>& m_cme,
+                      vector<bool>& act, double& inter,
+                      vector<double>& beta, vector<double>& mg,
                       vector<double>& eta, vector<double>& resid, vector<double>& W, double dev){
   bool chng_flag = false;
   double cur_beta = 0.0;
@@ -672,6 +673,8 @@ bool coord_des_onerun(int pme, int pcme, int nn, NumericVector& lambda, NumericV
   double inprod = 0.0;
   double v = 0.25;
   double mu = 0.0;
+  int J = K1.size() - 1;
+
   //double dev = 0.0;
 
   // Extract the family type from CharacterVector
@@ -695,228 +698,190 @@ bool coord_des_onerun(int pme, int pcme, int nn, NumericVector& lambda, NumericV
     }
   }
 
-  //CD for main effects
-  for (int j=0;j<pme;j++){
-    //Only update if active
-    if (act_me[j]){
-      cur_beta = beta_me[j];
+  for (int g=0; g<J; g++) {
 
-      // Updata covariates
-      xwr = wcrossprod(X_me, resid, W, nn, j);
-      xwx = wsqsum(X_me, W, nn, j);
-      v = xwx/((double)nn);
-      // inprod = inprod/((double)nn)+beta_me[j]; i.e, zj in proof
-      inprod = xwr/((double)nn)+v*beta_me[j]; //checked to pod from update eqn (mod from above eqn)
+    //int K = K1[g+1] - K1[g];
 
-      //string me = Rcpp::as<string>(names_me[j]);
-      //int delta_ind = findind(effectIndexMap,me);
-
-      //Update cur_delta
-      cur_delta[0] = delta_sib[j]*m_me[j];
-      cur_delta[1] = delta_cou[j]*m_me[j];
-
-      //Perform ME thresholding
-      beta_me[j] = s_me(inprod,v,lambda,gamma,cur_delta);
-
-      // Update eta, mu, weight and delta
-      if (!dbleq(beta_me[j],cur_beta)){ // if beta changed...
-
-        //Update resid eta, mu, weight
-        for (int k=0;k<nn;k++){
-          resid[k] -= X_me[j*nn+k]*(beta_me[j]-cur_beta);
-          eta[k] += X_me[j*nn+k]*(beta_me[j]-cur_beta);
-          if (familyType == "binomial"){
-            mu = pbinomial(eta[k]) ;
-            W[k] = fmax2(mu*(1-mu),0.0001);
-          }else if(familyType == "poisson"){
-            mu = ppoisson(eta[k]) ;
-            W[k] = fmax2(mu,0.0001);
-          }
-          //v += (X_me[j*nn+k]*W[k]*X_me[j*nn+k])/((double)nn);
-        }
-        // xwx = wsqsum(X_me, W, nn, j);
-        // v = xwx/((double)nn);
-
-        //Update deltas
-        double offset_sib = mcp(beta_me[j],lambda[0],gamma)-mcp(cur_beta,lambda[0],gamma); // new - old
-        double offset_cou = mcp(beta_me[j],lambda[1],gamma)-mcp(cur_beta,lambda[1],gamma);
-        delta_sib[j] = delta_sib[j] * (exp(-(tau/lambda[0]) * m_me[j] * offset_sib ));
-        delta_cou[j] = delta_cou[j] * (exp(-(tau/lambda[1]) * m_me[j] * offset_cou ));
-
-        //Update flag
-        chng_flag = true;
-
-      }
-    }
-  }
-
-
-  //Update intercept
-  xwr = crossprod(W, resid, nn, 0);
-  xwx = sum(W,nn);
-  inter = xwr/xwx + cur_inter;
-  for (int i=0; i<nn; i++) {
-    resid[i] -= inter - cur_inter;
-    eta[i] += inter - cur_inter;
-    if (familyType == "binomial"){
-      mu = pbinomial(eta[i]) ;
-      W[i] = fmax2(mu*(1-mu),0.0001);
-    }else if(familyType == "poisson"){
-      mu = ppoisson(eta[i]) ;
-      W[i] = fmax2(mu,0.0001);
-    }
-  }
-  cur_beta = 0.0;
-  inprod = 0.0;
-
-  //CD for CME effects
-  for (int j=0;j<pme;j++){ //parent effect
-    for (int k=0;k<(2*(pme-1));k++){ //conditioned effect
-      //for (int j=0;j<pcme;j++){
-
-      int cmeind = j*(2*(pme-1))+k; //index for CME
-      //int condind = 0; //index for condition
-
-      if (act_cme[cmeind]){
-        int condind = floor((double)k/2.0);
-        if (condind >= j){
-          condind ++;
-        }
-        //string cme = Rcpp::as<string>(names_cme[j]);
-        //auto parts = splitString(cme);
-        //int sib_ind = findind(effectIndexMap,parts[0]);
-        //int cou_ind = findind(effectIndexMap,parts[1]);
-
-        cur_beta = beta_cme[cmeind]; //beta_cme ordered by parent effects, then condition
-        //cur_inter= inter;
-
-        //Update cur_delta
-        cur_delta[0] = delta_sib[j] * m_cme[cmeind];
-        cur_delta[1] = delta_cou[condind] * m_cme[cmeind];
+    //CD for covariates in group g
+    for (int j=K1[g];j<K1[g+1];j++){
+      //Only update if active
+      if (act[j]){
+        cur_beta = beta[j];
 
         // Updata covariates
-        xwr = wcrossprod(X_cme, resid, W, nn, cmeind);
-        xwx = wsqsum(X_cme, W, nn, cmeind);
+        xwr = wcrossprod(X, resid, W, nn, j);
+        xwx = wsqsum(X, W, nn, j);
         v = xwx/((double)nn);
         // inprod = inprod/((double)nn)+beta_me[j]; i.e, zj in proof
-        inprod = xwr/((double)nn)+v*beta_cme[cmeind]; //checked to pod from update eqn (mod from above eqn)
+        inprod = xwr/((double)nn)+v*beta[j]; //checked to pod from update eqn (mod from above eqn)
 
-        //Perform CME thresholding
-        beta_cme[cmeind] = s_me(inprod,v,lambda,gamma,cur_delta);
+        //string me = Rcpp::as<string>(names_me[j]);
+        //int delta_ind = findind(effectIndexMap,me);
 
-        //Update eta, mu, weight and delta
-        if (!dbleq(beta_cme[cmeind],cur_beta)){ // if beta changed...
+        //Update cur_delta
+        int gind;
+        if (g % 2 == 0) { //if this is sibling group
+          gind = floor((double)g/2.0);
+          cur_delta[0] = delta_sib[gind] * mg[g];
+          cur_delta[1] = delta_cou[gind] * mg[g+1];
+        } else { //if this is cousin group
+          gind = floor((double)g/2.0); //index for cousin group
+          cur_delta[0] = delta_sib[gind] * mg[g-1];
+          cur_delta[1] = delta_cou[gind] * mg[g];
+        }
+
+        //Perform ME thresholding
+        beta[j] = s_me(inprod,v,lambda,gamma,cur_delta);
+
+        // Update eta, mu, weight and delta
+        if (!dbleq(beta[j],cur_beta)){ // if beta changed...
 
           //Update resid eta, mu, weight
-          for (int ll=0;ll<nn;ll++){
-            resid[ll] -= X_cme[cmeind*nn+ll]*(beta_cme[cmeind]-cur_beta);
-            eta[ll] += X_cme[cmeind*nn+ll]*(beta_cme[cmeind]-cur_beta);
+          for (int k=0;k<nn;k++){
+            resid[k] -= X[j*nn+k]*(beta[j]-cur_beta);
+            eta[k] += X[j*nn+k]*(beta[j]-cur_beta);
             if (familyType == "binomial"){
-              mu = pbinomial(eta[ll]) ;
-              W[ll] = fmax2(mu*(1-mu),0.0001);
+              mu = pbinomial(eta[k]) ;
+              W[k] = fmax2(mu*(1-mu),0.0001);
             }else if(familyType == "poisson"){
-              mu = ppoisson(eta[ll]) ;
-              W[ll] = fmax2(mu,0.0001);
+              mu = ppoisson(eta[k]) ;
+              W[k] = fmax2(mu,0.0001);
             }
             //v += (X_me[j*nn+k]*W[k]*X_me[j*nn+k])/((double)nn);
           }
+          // xwx = wsqsum(X_me, W, nn, j);
+          // v = xwx/((double)nn);
 
           //Update deltas
-          double offset_sib = mcp(beta_cme[cmeind],lambda[0],gamma)-mcp(cur_beta,lambda[0],gamma); // new - old
-          double offset_cou = mcp(beta_cme[cmeind],lambda[1],gamma)-mcp(cur_beta,lambda[1],gamma); // new - old
-          delta_sib[j] = delta_sib[j] * (exp(-(tau/lambda[0]) * m_cme[cmeind] * offset_sib )); // update delta for siblings
-          delta_cou[condind] = delta_cou[condind] * (exp(-(tau/lambda[1]) * m_cme[cmeind] * offset_cou )); // update delta for cousins
+          double offset_sib = mcp(beta[j],lambda[0],gamma)-mcp(cur_beta,lambda[0],gamma); // new - old
+          double offset_cou = mcp(beta[j],lambda[1],gamma)-mcp(cur_beta,lambda[1],gamma);
+
+          if (g % 2 == 0) {
+            delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * offset_sib )) * mg[g];
+            delta_cou[gind] = delta_cou[gind] * mg[g+1]; //(exp(-(tau/lambda[1]) * offset_cou ))
+          } else {
+            delta_sib[gind] = delta_sib[gind] * mg[g-1]; //(exp(-(tau/lambda[0]) * offset_sib ))
+            delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * offset_cou )) * mg[g];
+          }
 
           //Update flag
           chng_flag = true;
 
         }
 
-
-
         //Reduce A|B+ and A|B- to A
         //
-        if (abs(beta_cme[cmeind]) > 0.0){ //if current CME is active
-          if (k % 2 == 0){ //cme is .|.+
-            if (abs(beta_cme[cmeind+1]) > 0.0){ //if cme .|.- is also in model...
+        if (abs(beta[j]) > 0.0 && j != K1[g]){ //if current CME is active
+          int id = j - K1[g];
+          if (id % 2 == 1){ //cme is .|.+
+            if (abs(beta[j+1]) > 0.0){ //if cme .|.- is also in model...
 
               double chg, cur_beta_me, cur_beta_cme1, cur_beta_cme2;
 
-              if ( abs(beta_cme[cmeind]) > abs(beta_cme[cmeind+1]) ){// if abs(.|.+) > abs(.|.-)
-                chg = beta_cme[cmeind+1]; // change
-                cur_beta_me = beta_me[j]; // current beta me
-                cur_beta_cme1 = beta_cme[cmeind]; // current beta cme 1
-                cur_beta_cme2 = beta_cme[cmeind+1]; // current beta cme 2
-                beta_me[j] += chg; // update ME with smaller CME
-                beta_cme[cmeind] -= chg; // update larger CME
-                beta_cme[cmeind+1] = 0.0; // remove smaller CME
+              if ( abs(beta[j]) > abs(beta[j+1]) ){// if abs(.|.+) > abs(.|.-)
+                chg = beta[j+1]; // change
+                cur_beta_me = beta[K1[g]]; // current beta me
+                cur_beta_cme1 = beta[j]; // current beta cme 1
+                cur_beta_cme2 = beta[j+1]; // current beta cme 2
+                beta[K1[g]] += chg; // update ME with smaller CME
+                beta[j] -= chg; // update larger CME
+                beta[j+1] = 0.0; // remove smaller CME
               }else{// if abs(.|.+) < abs(.|.-)
-                chg = beta_cme[cmeind]; // change
-                cur_beta_me = beta_me[j]; // current beta me
-                cur_beta_cme1 = beta_cme[cmeind]; // current beta cme 1
-                cur_beta_cme2 = beta_cme[cmeind+1]; // current beta cme 2
-                beta_me[j] += chg; // update ME with smaller CME
-                beta_cme[cmeind+1] -= chg; // update larger CME
-                beta_cme[cmeind] = 0.0; // remove smaller CME
+                chg = beta[j]; // change
+                cur_beta_me = beta[K1[g]]; // current beta me
+                cur_beta_cme1 = beta[j]; // current beta cme 1
+                cur_beta_cme2 = beta[j+1]; // current beta cme 2
+                beta[K1[g]] += chg; // update ME with smaller CME
+                beta[j+1] -= chg; // update larger CME
+                beta[j] = 0.0; // remove smaller CME
               }
 
               //Update deltas and flag
-              double offset_sib = mcp(beta_me[j],lambda[0],gamma)-mcp(cur_beta_me,lambda[0],gamma); // new - old (for me)
-              double offset_cou = mcp(beta_me[j],lambda[1],gamma)-mcp(cur_beta_me,lambda[1],gamma);
-              delta_sib[j] = delta_sib[j] * (exp(-(tau/lambda[0]) * m_me[j] * offset_sib ));
-              delta_cou[j] = delta_cou[j] * (exp(-(tau/lambda[1]) * m_me[j] * offset_cou ));
+              double offset_sib = mcp(beta[K1[g]],lambda[0],gamma)-mcp(cur_beta_me,lambda[0],gamma); // new - old (for me)
+              double offset_cou = mcp(beta[K1[g]],lambda[1],gamma)-mcp(cur_beta_me,lambda[1],gamma);
+              if (g % 2 == 0) {
+                delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * offset_sib )) * mg[g];
+                delta_cou[gind] = delta_cou[gind] * mg[g+1]; //(exp(-(tau/lambda[1]) * offset_cou ))
+              } else {
+                delta_sib[gind] = delta_sib[gind] * mg[g-1]; //(exp(-(tau/lambda[0]) * offset_sib ))
+                delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * offset_cou )) * mg[g];
+              }
 
-              offset_sib = mcp(beta_cme[cmeind],lambda[0],gamma)-mcp(cur_beta_cme1,lambda[0],gamma); // new - old (for .|.+)
-              offset_cou = mcp(beta_cme[cmeind],lambda[1],gamma)-mcp(cur_beta_cme1,lambda[1],gamma);
-              delta_sib[j] = delta_sib[j] * (exp(-(tau/lambda[0]) * m_cme[cmeind] * offset_sib ));
-              delta_cou[condind] = delta_cou[condind] * (exp(-(tau/lambda[1]) * m_cme[cmeind] * offset_cou ));
+              offset_sib = mcp(beta[j],lambda[0],gamma)-mcp(cur_beta_cme1,lambda[0],gamma); // new - old (for .|.+)
+              offset_cou = mcp(beta[j],lambda[1],gamma)-mcp(cur_beta_cme1,lambda[1],gamma);
+              if (g % 2 == 0) {
+                delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * offset_sib )) * mg[g];
+                delta_cou[gind] = delta_cou[gind] * mg[g+1]; //(exp(-(tau/lambda[1]) * offset_cou ))
+              } else {
+                delta_sib[gind] = delta_sib[gind] * mg[g-1]; //(exp(-(tau/lambda[0]) * offset_sib ))
+                delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * offset_cou )) * mg[g];
+              }
 
-              offset_sib = mcp(beta_cme[cmeind+1],lambda[0],gamma)-mcp(cur_beta_cme2,lambda[0],gamma); // new - old (for .|.-)
-              offset_cou = mcp(beta_cme[cmeind+1],lambda[1],gamma)-mcp(cur_beta_cme2,lambda[1],gamma);
-              delta_sib[j] = delta_sib[j] * (exp(-(tau/lambda[0]) * m_cme[cmeind+1] * offset_sib ));
-              delta_cou[condind] = delta_cou[condind] * (exp(-(tau/lambda[1]) * m_cme[cmeind+1] * offset_cou ));
-
+              offset_sib = mcp(beta[j+1],lambda[0],gamma)-mcp(cur_beta_cme2,lambda[0],gamma); // new - old (for .|.-)
+              offset_cou = mcp(beta[j+1],lambda[1],gamma)-mcp(cur_beta_cme2,lambda[1],gamma);
+              if (g % 2 == 0) {
+                delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * offset_sib )) * mg[g];
+                delta_cou[gind] = delta_cou[gind] * mg[g+1]; //(exp(-(tau/lambda[1]) * offset_cou ))
+              } else {
+                delta_sib[gind] = delta_sib[gind] * mg[g-1]; //(exp(-(tau/lambda[0]) * offset_sib ))
+                delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * offset_cou )) * mg[g];
+              }
               //residuals shouldn't change
 
             }
           }else{ //cme is .|.-
-            if (abs(beta_cme[cmeind-1]) > 0.0){ //if cme .|.+ is also in model...
+            if (abs(beta[j-1]) > 0.0){ //if cme .|.+ is also in model...
 
               double chg, cur_beta_me, cur_beta_cme1, cur_beta_cme2;
 
-              if ( abs(beta_cme[cmeind]) > abs(beta_cme[cmeind-1]) ){// if abs(.|.+) < abs(.|.-)
-                chg = beta_cme[cmeind-1]; // change
-                cur_beta_me = beta_me[j]; // current beta me
-                cur_beta_cme1 = beta_cme[cmeind]; // current beta cme 1
-                cur_beta_cme2 = beta_cme[cmeind-1]; // current beta cme 2
-                beta_me[j] += chg; // update ME with smaller CME
-                beta_cme[cmeind] -= chg; // update larger CME
-                beta_cme[cmeind-1] = 0.0; // remove smaller CME
+              if ( abs(beta[j]) > abs(beta[j-1]) ){// if abs(.|.+) < abs(.|.-)
+                chg = beta[j-1]; // change
+                cur_beta_me = beta[K1[g]]; // current beta me
+                cur_beta_cme1 = beta[j]; // current beta cme 1
+                cur_beta_cme2 = beta[j-1]; // current beta cme 2
+                beta[K1[g]] += chg; // update ME with smaller CME
+                beta[j] -= chg; // update larger CME
+                beta[j-1] = 0.0; // remove smaller CME
               }else{// if abs(.|.+) > abs(.|.-)
-                chg = beta_cme[cmeind]; // change
-                cur_beta_me = beta_me[j]; // current beta me
-                cur_beta_cme1 = beta_cme[cmeind]; // current beta cme 1
-                cur_beta_cme2 = beta_cme[cmeind-1]; // current beta cme 2
-                beta_me[j] += chg; // update ME with smaller CME
-                beta_cme[cmeind-1] -= chg; // update larger CME
-                beta_cme[cmeind] = 0.0; // remove smaller CME
+                chg = beta[j]; // change
+                cur_beta_me = beta[K1[g]]; // current beta me
+                cur_beta_cme1 = beta[j]; // current beta cme 1
+                cur_beta_cme2 = beta[j-1]; // current beta cme 2
+                beta[K1[g]] += chg; // update ME with smaller CME
+                beta[j-1] -= chg; // update larger CME
+                beta[j] = 0.0; // remove smaller CME
               }
 
               //Update deltas and flag
-              double offset_sib = mcp(beta_me[j],lambda[0],gamma)-mcp(cur_beta_me,lambda[0],gamma); // new - old (for me)
-              double offset_cou = mcp(beta_me[j],lambda[1],gamma)-mcp(cur_beta_me,lambda[1],gamma);
-              delta_sib[j] = delta_sib[j] * (exp(-(tau/lambda[0]) * m_me[j] * offset_sib ));
-              delta_cou[j] = delta_cou[j] * (exp(-(tau/lambda[1]) * m_me[j] * offset_cou ));
+              double offset_sib = mcp(beta[K1[g]],lambda[0],gamma)-mcp(cur_beta_me,lambda[0],gamma); // new - old (for me)
+              double offset_cou = mcp(beta[K1[g]],lambda[1],gamma)-mcp(cur_beta_me,lambda[1],gamma);
+              if (g % 2 == 0) {
+                delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * offset_sib )) * mg[g];
+                delta_cou[gind] = delta_cou[gind] * mg[g+1]; //(exp(-(tau/lambda[1]) * offset_cou )) *
+              } else {
+                delta_sib[gind] = delta_sib[gind] * mg[g-1]; //(exp(-(tau/lambda[0]) * offset_sib )) *
+                delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * offset_cou )) * mg[g];
+              }
 
-              offset_sib = mcp(beta_cme[cmeind],lambda[0],gamma)-mcp(cur_beta_cme1,lambda[0],gamma); // new - old (for .|.+)
-              offset_cou = mcp(beta_cme[cmeind],lambda[1],gamma)-mcp(cur_beta_cme1,lambda[1],gamma);
-              delta_sib[j] = delta_sib[j] * (exp(-(tau/lambda[0]) * m_cme[cmeind] * offset_sib ));
-              delta_cou[condind] = delta_cou[condind] * (exp(-(tau/lambda[1]) * m_cme[cmeind] *offset_cou ));
+              offset_sib = mcp(beta[j],lambda[0],gamma)-mcp(cur_beta_cme1,lambda[0],gamma); // new - old (for .|.+)
+              offset_cou = mcp(beta[j],lambda[1],gamma)-mcp(cur_beta_cme1,lambda[1],gamma);
+              if (g % 2 == 0) {
+                delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * offset_sib )) * mg[g];
+                delta_cou[gind] = delta_cou[gind] * mg[g+1]; //(exp(-(tau/lambda[1]) * offset_cou )) *
+              } else {
+                delta_sib[gind] = delta_sib[gind] * mg[g-1]; //(exp(-(tau/lambda[0]) * offset_sib )) *
+                delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * offset_cou )) * mg[g];
+              }
 
-              offset_sib = mcp(beta_cme[cmeind-1],lambda[0],gamma)-mcp(cur_beta_cme2,lambda[0],gamma); // new - old (for .|.-)
-              offset_cou = mcp(beta_cme[cmeind-1],lambda[1],gamma)-mcp(cur_beta_cme2,lambda[1],gamma);
-              delta_sib[j] = delta_sib[j] * (exp(-(tau/lambda[0]) * m_cme[cmeind-1] * offset_sib ));
-              delta_cou[condind] = delta_cou[condind] * (exp(-(tau/lambda[1]) * m_cme[cmeind-1] * offset_cou ));
+              offset_sib = mcp(beta[j-1],lambda[0],gamma)-mcp(cur_beta_cme2,lambda[0],gamma); // new - old (for .|.-)
+              offset_cou = mcp(beta[j-1],lambda[1],gamma)-mcp(cur_beta_cme2,lambda[1],gamma);
+              if (g % 2 == 0) {
+                delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * offset_sib )) * mg[g];
+                delta_cou[gind] = delta_cou[gind] * mg[g+1]; //(exp(-(tau/lambda[1]) * offset_cou )) *
+              } else {
+                delta_sib[gind] = delta_sib[gind] * mg[g-1]; //(exp(-(tau/lambda[0]) * offset_sib )) *
+                delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * offset_cou )) * mg[g];
+              }
 
               //residuals shouldn't change
 
@@ -1599,10 +1564,11 @@ List cme_str(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Cha
 
 
 // [[Rcpp::export]]
-List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, CharacterVector& family,
+List cme(NumericMatrix& XX, NumericVector& yy, CharacterVector& family,
+         NumericVector& K1,
          NumericVector& lambda_sib_vec, NumericVector& lambda_cou_vec,
          NumericVector& gamma_vec, NumericVector& tau_vec,
-         NumericVector& XX_me_sl, NumericVector& XX_cme_sl, NumericVector& beta_vec, NumericVector& act_vec, NumericVector& multiplier,
+         NumericVector& XX_sl, NumericVector& beta_vec, NumericVector& act_vec, NumericVector& multiplier,
          double lambda_max, int it_max, int it_warm, int reset, bool screen_ind) {
   // // [[Rcpp::plugins(openmp)]]
   //------------------------------------------------------------
@@ -1618,9 +1584,8 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
   //------------------------------------------------------------
 
   //Variable initialization
-  int pme = XX_me.ncol(); //# of MEs
-  int pcme = XX_cme.ncol(); //# of CMEs
-  int nn = XX_me.nrow(); //# of observations
+  int pp = XX.ncol(); //# of CMEs
+  int nn = XX.nrow(); //# of observations
   int nlambdasib = lambda_sib_vec.size();
   int nlambdacou = lambda_cou_vec.size();
   int it_inner = 0;
@@ -1629,23 +1594,25 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
   bool chng_flag = false;
   double v = 0.25;
   double mu = 0;
+  int J = K1.size() - 1;
+  int pme = J/2; //# of MEs
 
   // Extract the family type from CharacterVector
   string familyType = Rcpp::as<string>(family[0]);
 
   //Vectorize model matrices
-  vector<double> X_me(nn*pme); //for ME
-  vector<double> X_cme(nn*pcme); //for CME
-  for (int i=0;i<pme;i++){
+  vector<double> X(nn*pp); //for ME
+  //vector<double> X_cme(nn*pcme); //for CME
+  for (int i=0;i<pp;i++){
     for (int j=0;j<nn;j++){
-      X_me[i*nn+j] = XX_me(j,i);
+      X[i*nn+j] = XX(j,i);
     }
   }
-  for (int i=0;i<pcme;i++){
-    for (int j=0;j<nn;j++){
-      X_cme[i*nn+j] = XX_cme(j,i);
-    }
-  }
+  // for (int i=0;i<pcme;i++){
+  //   for (int j=0;j<nn;j++){
+  //     X_cme[i*nn+j] = XX_cme(j,i);
+  //   }
+  // }
   // store colnames name of ME and CME
   // CharacterVector names_me = colnames(XX_me);
   // CharacterVector names_cme = colnames(XX_cme);
@@ -1668,35 +1635,35 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
   }
 
   //Containers for beta and active set (alpha)
-  arma::cube beta_cube(pme+pcme,niter_1,niter_2); //betas to return
-  arma::cube delta_sib_cube(pme,niter_1,niter_2); //deltas to return
-  arma::cube delta_cou_cube(pme,niter_1,niter_2); //deltas to return
+  arma::cube beta_cube(pp,niter_1,niter_2); //betas to return
+  arma::cube delta_sib_cube(J,niter_1,niter_2); //deltas to return
+  arma::cube delta_cou_cube(J,niter_1,niter_2); //deltas to return
   arma::mat nz(niter_1,niter_2);
   arma::mat inter_mat(niter_1,niter_2); //intercept to return
   arma::mat dev_mat(niter_1,niter_2); //deviation to return
-  arma::mat beta_mat(pme+pcme,niter_1);
-  arma::mat delta_sib_mat(pme,niter_1);
-  arma::mat delta_cou_mat(pme,niter_1);
+  arma::mat beta_mat(pp,niter_1);
+  arma::mat delta_sib_mat(J,niter_1);
+  arma::mat delta_cou_mat(J,niter_1);
 
-  vector<double> beta_me(pme,0.0); //for MEs
-  for (int i=0;i<pme;i++){
-    beta_me[i] = beta_vec[i];
+  vector<double> beta(pp,0.0); //for MEs
+  for (int i=0;i<pp;i++){
+    beta[i] = beta_vec[i];
   }
-  vector<double> beta_cme(pcme,0.0); //for CMEs
-  for (int i=0;i<pcme;i++){
-    beta_cme[i] = beta_vec[pme+i];
-  }
+  // vector<double> beta_cme(pcme,0.0); //for CMEs
+  // for (int i=0;i<pcme;i++){
+  //   beta_cme[i] = beta_vec[pme+i];
+  // }
   //double cur_beta = 0.0; //running beta
 
   //Containers for siblings or cousion family
-  vector<int> sibind(2*(pme-1),0);
-  vector<int> couind(2*(pme-1),0);
+  //vector<int> sibind(2*(pme-1),0);
+  //vector<int> couind(2*(pme-1),0);
 
   //Set all factors as active to begin
-  vector<bool> act_me(pme,true); //Current active set
-  vector<bool> act_cme(pcme,true);
-  vector<bool> scr_me(pme,true); //Screened active set
-  vector<bool> scr_cme(pcme,true);
+  vector<bool> act(pp,true); //Current active set
+  //vector<bool> act_cme(pcme,true);
+  vector<bool> scr(pp,true); //Screened active set
+  //vector<bool> scr_cme(pcme,true);
   bool kkt_bool;
 
   //set<string> uniqueEffects;
@@ -1723,14 +1690,14 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
   //// Containers for linearized slopes Delta
   //vector<double> delta_sib(uniqueEffects.size(), 0.0); // Linearized penalty for siblings (sib(A), sib(B), ...)
   //vector<double> delta_cou(uniqueEffects.size(), 0.0); // Linearized penalty for cousins (cou(A), cou(B), ...)
-  vector<double> m_me(pme,1);
-  vector<double> m_cme(pcme,1);
-  for (int i=0;i<pme;i++){
-    m_me[i] = multiplier[i];
+  vector<double> mg(J,1);
+  //vector<double> m_cme(pcme,1);
+  for (int i=0;i<J;i++){
+    mg[i] = multiplier[i];
   }
-  for (int i=0;i<pcme;i++){
-    m_cme[i] = multiplier[pme+i];
-  }
+  // for (int i=0;i<pcme;i++){
+  //   m_cme[i] = multiplier[pme+i];
+  // }
 
   //Containers for linearized slopes Delta
   vector<double> delta_sib(pme); //Linearized penalty for siblings (sib(A), sib(B), ...)
@@ -1750,8 +1717,8 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
   vector<double> resid(nn); //Residual vector
   arma::cube resid_cube(nn,niter_1,niter_2);
   arma::mat resid_mat(nn,niter_1);
-  arma::cube scr_cube(pme+pcme,niter_1,niter_2); //screening vector
-  arma::mat scr_mat(pme+pcme,niter_1);
+  arma::cube scr_cube(pp,niter_1,niter_2); //screening vector
+  arma::mat scr_mat(pp,niter_1);
 
   double nullDev = 0.0;
   double dev = 0.0;
@@ -1814,150 +1781,150 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
         gamma = gamma_vec[b];
       }
 
-      //Update screen set
-      if (lambda_it && screen_ind && a>0 && b>0){
-
-        int num_scr = 0;
-        for (int j=0;j<pme;j++){
-
-          if (act_me[j] && scr_me[j]){
-            int size = 2 * (pme - 1);
-            vector<int> eff(size);
-            vector<int> sibind(size);
-            vector<int> couind(size); // Pre-allocate space for couind
-
-            // eff index
-            for(int i = 0; i < size; ++i) {
-              eff[i] = i + 1 ; // eff index
-              sibind[i] = i + j*size;  // sibling index
-            }
-
-            // cousin index
-            for(int jj = 0; jj < size; ++jj) {
-              int halfCeil = std::ceil(static_cast<double>(eff[jj]) / 2);
-              if((j+1) > halfCeil) {
-                couind[jj] = (halfCeil - 1) * size + (eff[jj] % 2 == 0 ? 1 : 0) + (j+1 - 2) * 2;
-              } else {
-                couind[jj] = halfCeil * size + (eff[jj] % 2 == 0 ? 1 : 0) + (j+1 - 1) * 2;
-              }
-            }
-
-
-            cj = wcrossprod(X_me, resid, W, nn, j);
-            vj = wsqsum(X_me, W, nn, j)/((double)nn);
-
-            if (sum_act(beta_cme,sibind)==0) {
-              if (sum_act(beta_cme,couind)==0) {
-                thresh = max(lambda[0]+lambda[1]+vj*gamma/(vj*gamma-2)*(lambda[0]-lambda_sib_vec[a-1]),
-                             lambda[0]+lambda[1]+vj*gamma/(vj*gamma-2)*(lambda[1]-lambda_cou_vec[b-1]));
-                if (abs(cj) > thresh) {
-                  scr_me[j] = true;
-                  num_scr ++;
-                }else{
-                  scr_me[j] = false;
-                }
-              } else if (sum_act(beta_cme,couind)>0) {
-                thresh = lambda[0]+cur_delta[1]+vj*gamma/(vj*gamma-cur_delta[1]/lambda[1]-1)*(lambda[0]-lambda_sib_vec[a-1]);
-                if (abs(cj) > thresh) {
-                  scr_me[j] = true;
-                  num_scr ++;
-                }else{
-                  scr_me[j] = false;
-                }
-              }
-            }
-            else {
-              if (sum_act(beta_cme,couind)==0) {
-                thresh = cur_delta[0]+lambda[1]+vj*gamma/(vj*gamma-cur_delta[0]/lambda[0]-1)*(lambda[1]-lambda_cou_vec[b-1]);
-                if (abs(cj) > thresh) {
-                  scr_me[j] = true;
-                  num_scr ++;
-                }else{
-                  scr_me[j] = false;
-                }
-              }
-            }
-          }
-        }
-
-        for (int j=0;j<pme;j++){ //parent effect
-          for (int k=0;k<(2*(pme-1));k++){ //conditioned effect
-            //for (int j=0; j<pcme; j++){
-
-            int cmeind = j*(2*(pme-1))+k; //index for CME
-
-            if (act_cme[cmeind] && scr_cme[cmeind]){
-              int condind = floor((double)k/2.0);
-              if (condind >= j){
-                condind ++;
-              }
-
-              int size = 2 * (pme - 1);
-
-              // cousin index
-              for(int jj = 0; jj < size; jj++) {
-
-                sibind[jj] = jj + j*size;  // sibling index
-
-                int halfCeil = ceil(static_cast<double>(jj+1) / 2);
-                if((condind+1) > halfCeil) {
-                  couind[jj] = (halfCeil - 1) * size + ((jj+1) % 2 == 0 ? 1 : 0) + (condind+1 - 2) * 2;
-                } else {
-                  couind[jj] = halfCeil * size + ((jj+1) % 2 == 0 ? 1 : 0) + (condind+1 - 1) * 2;
-                }
-              }
-
-
-              cj = wcrossprod(X_cme, resid, W, nn, cmeind);
-              vj = wsqsum(X_cme, W, nn, cmeind)/((double)nn);
-
-              if (sum_act(beta_cme,sibind)==0) {
-                if (sum_act(beta_cme,couind)==0) {
-                  thresh = max(lambda[0]+lambda[1]+vj*gamma/(vj*gamma-2)*(lambda[0]-lambda_sib_vec[a-1]),
-                               lambda[0]+lambda[1]+vj*gamma/(vj*gamma-2)*(lambda[1]-lambda_cou_vec[b-1]));
-                  if (abs(cj) > thresh) {
-                    scr_cme[cmeind] = true;
-                    num_scr ++;
-                  }else{
-                    scr_cme[cmeind] = false;
-                  }
-                } else if (sum_act(beta_cme,couind)>0) {
-                  thresh = lambda[0]+cur_delta[1]+vj*gamma/(vj*gamma-cur_delta[1]/lambda[1]-1)*(lambda[0]-lambda_sib_vec[a-1]);
-                  if (abs(cj) > thresh) {
-                    scr_cme[cmeind] = true;
-                    num_scr ++;
-                  }else{
-                    scr_cme[cmeind] = false;
-                  }
-                }
-              }
-              else {
-                if (sum_act(beta_cme,couind)==0) {
-                  thresh = cur_delta[0]+lambda[1]+vj*gamma/(vj*gamma-cur_delta[0]/lambda[0]-1)*(lambda[1]-lambda_cou_vec[b-1]);
-                  if (abs(cj) > thresh) {
-                    scr_cme[cmeind] = true;
-                    num_scr ++;
-                  }else{
-                    scr_cme[cmeind] = false;
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
+      // //Update screen set
+      // if (lambda_it && screen_ind && a>0 && b>0){
+      //
+      //   int num_scr = 0;
+      //   for (int j=0;j<pme;j++){
+      //
+      //     if (act_me[j] && scr_me[j]){
+      //     int size = 2 * (pme - 1);
+      //     vector<int> eff(size);
+      //     vector<int> sibind(size);
+      //     vector<int> couind(size); // Pre-allocate space for couind
+      //
+      //     // eff index
+      //     for(int i = 0; i < size; ++i) {
+      //       eff[i] = i + 1 ; // eff index
+      //       sibind[i] = i + j*size;  // sibling index
+      //     }
+      //
+      //     // cousin index
+      //     for(int jj = 0; jj < size; ++jj) {
+      //       int halfCeil = std::ceil(static_cast<double>(eff[jj]) / 2);
+      //       if((j+1) > halfCeil) {
+      //         couind[jj] = (halfCeil - 1) * size + (eff[jj] % 2 == 0 ? 1 : 0) + (j+1 - 2) * 2;
+      //       } else {
+      //         couind[jj] = halfCeil * size + (eff[jj] % 2 == 0 ? 1 : 0) + (j+1 - 1) * 2;
+      //       }
+      //     }
+      //
+      //
+      //     cj = wcrossprod(X_me, resid, W, nn, j);
+      //     vj = wsqsum(X_me, W, nn, j)/((double)nn);
+      //
+      //     if (sum_act(beta_cme,sibind)==0) {
+      //       if (sum_act(beta_cme,couind)==0) {
+      //         thresh = max(lambda[0]+lambda[1]+vj*gamma/(vj*gamma-2)*(lambda[0]-lambda_sib_vec[a-1]),
+      //                      lambda[0]+lambda[1]+vj*gamma/(vj*gamma-2)*(lambda[1]-lambda_cou_vec[b-1]));
+      //         if (abs(cj) > thresh) {
+      //           scr_me[j] = true;
+      //           num_scr ++;
+      //         }else{
+      //           scr_me[j] = false;
+      //         }
+      //       } else if (sum_act(beta_cme,couind)>0) {
+      //         thresh = lambda[0]+cur_delta[1]+vj*gamma/(vj*gamma-cur_delta[1]/lambda[1]-1)*(lambda[0]-lambda_sib_vec[a-1]);
+      //         if (abs(cj) > thresh) {
+      //           scr_me[j] = true;
+      //           num_scr ++;
+      //         }else{
+      //           scr_me[j] = false;
+      //         }
+      //       }
+      //     }
+      //     else {
+      //       if (sum_act(beta_cme,couind)==0) {
+      //         thresh = cur_delta[0]+lambda[1]+vj*gamma/(vj*gamma-cur_delta[0]/lambda[0]-1)*(lambda[1]-lambda_cou_vec[b-1]);
+      //         if (abs(cj) > thresh) {
+      //           scr_me[j] = true;
+      //           num_scr ++;
+      //         }else{
+      //           scr_me[j] = false;
+      //         }
+      //       }
+      //     }
+      //   }
+      //   }
+      //
+      //   for (int j=0;j<pme;j++){ //parent effect
+      //    for (int k=0;k<(2*(pme-1));k++){ //conditioned effect
+      //   //for (int j=0; j<pcme; j++){
+      //
+      //     int cmeind = j*(2*(pme-1))+k; //index for CME
+      //
+      //     if (act_cme[cmeind] && scr_cme[cmeind]){
+      //     int condind = floor((double)k/2.0);
+      //     if (condind >= j){
+      //       condind ++;
+      //     }
+      //
+      //     int size = 2 * (pme - 1);
+      //
+      //     // cousin index
+      //     for(int jj = 0; jj < size; jj++) {
+      //
+      //       sibind[jj] = jj + j*size;  // sibling index
+      //
+      //       int halfCeil = ceil(static_cast<double>(jj+1) / 2);
+      //       if((condind+1) > halfCeil) {
+      //         couind[jj] = (halfCeil - 1) * size + ((jj+1) % 2 == 0 ? 1 : 0) + (condind+1 - 2) * 2;
+      //       } else {
+      //         couind[jj] = halfCeil * size + ((jj+1) % 2 == 0 ? 1 : 0) + (condind+1 - 1) * 2;
+      //       }
+      //     }
+      //
+      //
+      //     cj = wcrossprod(X_cme, resid, W, nn, cmeind);
+      //     vj = wsqsum(X_cme, W, nn, cmeind)/((double)nn);
+      //
+      //     if (sum_act(beta_cme,sibind)==0) {
+      //       if (sum_act(beta_cme,couind)==0) {
+      //         thresh = max(lambda[0]+lambda[1]+vj*gamma/(vj*gamma-2)*(lambda[0]-lambda_sib_vec[a-1]),
+      //                      lambda[0]+lambda[1]+vj*gamma/(vj*gamma-2)*(lambda[1]-lambda_cou_vec[b-1]));
+      //         if (abs(cj) > thresh) {
+      //           scr_cme[cmeind] = true;
+      //           num_scr ++;
+      //         }else{
+      //           scr_cme[cmeind] = false;
+      //         }
+      //       } else if (sum_act(beta_cme,couind)>0) {
+      //         thresh = lambda[0]+cur_delta[1]+vj*gamma/(vj*gamma-cur_delta[1]/lambda[1]-1)*(lambda[0]-lambda_sib_vec[a-1]);
+      //         if (abs(cj) > thresh) {
+      //           scr_cme[cmeind] = true;
+      //           num_scr ++;
+      //         }else{
+      //           scr_cme[cmeind] = false;
+      //         }
+      //       }
+      //     }
+      //     else {
+      //       if (sum_act(beta_cme,couind)==0) {
+      //         thresh = cur_delta[0]+lambda[1]+vj*gamma/(vj*gamma-cur_delta[0]/lambda[0]-1)*(lambda[1]-lambda_cou_vec[b-1]);
+      //         if (abs(cj) > thresh) {
+      //           scr_cme[cmeind] = true;
+      //           num_scr ++;
+      //         }else{
+      //           scr_cme[cmeind] = false;
+      //         }
+      //       }
+      //     }
+      //   }
+      //  }
+      //   }
+      // }
 
 
 
       //Return trivial solution of \beta=0 when \lambda_s + \lambda_c >= \lambda_max
       // if ( (lambda[0]+lambda[1]) >= lambda_max){
       if ( (a==0) || ( (lambda[0]+lambda[1]) >= lambda_max) ){
-        for (int i=0;i<pme;i++){//reset beta
-          beta_me[i] = 0.0;
+        for (int i=0;i<pp;i++){//reset beta
+          beta[i] = 0.0;
         }
-        for (int i=0;i<pcme;i++){
-          beta_cme[i] = 0.0;
-        }
+        // for (int i=0;i<pcme;i++){
+        //   beta_cme[i] = 0.0;
+        // }
         if (familyType == "binomial") {
           inter = log(ymean/(1-ymean));
           for (int i=0; i<nn; i++) {
@@ -1980,31 +1947,31 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
         }
         num_act = 0;
         num_scr = 0;
-        for (int i=0;i<pme;i++){//reset active flag
-          act_me[i] = true;
-          scr_me[i] = true;
+        for (int i=0;i<pp;i++){//reset active flag
+          act[i] = true;
+          scr[i] = true;
           num_act ++;
           num_scr ++;
         }
-        for (int i=0;i<pcme;i++){
-          act_cme[i] = true;
-          scr_cme[i] = true;
-          num_act ++;
-          num_scr ++;
-        }
-        // cout << "num_act: " << num_act << endl;
+        // for (int i=0;i<pcme;i++){
+        //   act_cme[i] = true;
+        //   scr_cme[i] = true;
+        //   num_act ++;
+        //   num_scr ++;
+        // }
+        cout << "num_act: " << num_act << endl;
         if ( (lambda[0]+lambda[1]) >= lambda_max){
           goto cycend;
         }
       }
 
       // // RESET AFTER EACH RUN
-      for (int i=0;i<pme;i++){//reset beta
-        beta_me[i] = 0.0;
+      for (int i=0;i<pp;i++){//reset beta
+        beta[i] = 0.0;
       }
-      for (int i=0;i<pcme;i++){
-        beta_cme[i] = 0.0;
-      }
+      // for (int i=0;i<pcme;i++){
+      //   beta_cme[i] = 0.0;
+      // }
       if (familyType == "binomial") {
         inter = log(ymean/(1-ymean));
         for (int i=0; i<nn; i++) {
@@ -2027,25 +1994,23 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
       }
 
       //Recompute deltas
-      fill(delta_sib.begin(),delta_sib.end(),lambda[0]);
-      fill(delta_cou.begin(),delta_cou.end(),lambda[1]);
-      for (int j=0; j<pme; j++){
-        // v = wsqsum(X_me, W, nn, j)/((double)nn);
-        // string me = Rcpp::as<string>(names_me[j]);
-        // int delta_ind = findind(effectIndexMap,me);
-        delta_sib[j] = delta_sib[j] * ( exp( -(tau/lambda[0]) * m_me[j] * mcp(beta_me[j],lambda[0],gamma) ) );
-        delta_cou[j] = delta_cou[j] * ( exp( -(tau/lambda[1]) * m_me[j] * mcp(beta_me[j],lambda[1],gamma) ) );
-      }
-      for (int j=0;j<pme;j++){ //parent effect
-        for (int k=0;k<(2*(pme-1));k++){ //conditioned effect
-          int cmeind = j*(2*(pme-1))+k;
-          int condind = floor((double)k/2.0);
-          if (condind >= j){
-            condind ++;
+      fill(delta_sib.begin(),delta_sib.end(),lambda[0]); //assigns each element the value lambda[0]
+      fill(delta_cou.begin(),delta_cou.end(),lambda[1]); //assigns each element the value lambda[1]
+      for (int g=0; g<J; g++) {
+        for (int j=K1[g];j<K1[g+1];j++){
+          // v = wsqsum(X_me, W, nn, j)/((double)nn);
+          // string me = Rcpp::as<string>(names_me[j]);
+          // int delta_ind = findind(effectIndexMap,me);
+          //delta_sib[j] = delta_sib[j] * ( exp( -(tau/lambda[0]) * m_me[j] * mcp(beta_me[j],lambda[0],gamma) ) );
+          //delta_cou[j] = delta_cou[j] * ( exp( -(tau/lambda[1]) * m_me[j] * mcp(beta_me[j],lambda[1],gamma) ) );
+          int gind = floor((double)g/2.0); //index for sibling group
+          if (g % 2 == 0) {
+            delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mcp(beta[j],lambda[0],gamma) )) * mg[g];
+            delta_cou[gind] = delta_cou[gind] *  mg[g+1]; //(exp(-(tau/lambda[1]) * mcp(beta[j],lambda[1],gamma) )) *
+          } else {
+            delta_sib[gind] = delta_sib[gind] * mg[g-1]; //(exp(-(tau/lambda[0]) * mcp(beta[j],lambda[0],gamma) )) *
+            delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mcp(beta[j],lambda[1],gamma) )) * mg[g];
           }
-          // v = wsqsum(X_cme, W, nn, cmeind)/((double)nn);
-          delta_sib[j] = delta_sib[j] * (exp(-(tau/lambda[0]) * m_cme[cmeind] * mcp(beta_cme[cmeind],lambda[0],gamma) ));
-          delta_cou[condind] = delta_cou[condind] * (exp(-(tau/lambda[1]) * m_cme[cmeind] * mcp(beta_cme[cmeind],lambda[1],gamma) ));
         }
       }
 
@@ -2055,11 +2020,11 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
         //Active set reset for it_warm iterations
         for (int m=0; m<it_warm; m++){
           if (lambda_it && screen_ind && a>0 && b>0){
-            chng_flag = coord_des_onerun(pme, pcme, nn, lambda, cur_delta, chng_flag, tau, gamma, X_me, X_cme, yy,
-                                         family, delta_sib, delta_cou, scr_me, scr_cme, inter, beta_me, beta_cme, m_me, m_cme, eta, resid, W, dev);
+            chng_flag = coord_des_onerun(pme, nn, K1, lambda, cur_delta, chng_flag, tau, gamma, X, yy,
+                                         family, delta_sib, delta_cou, scr, inter, beta, mg, eta, resid, W, dev);
           } else{
-            chng_flag = coord_des_onerun(pme, pcme, nn, lambda, cur_delta, chng_flag, tau, gamma, X_me, X_cme, yy,
-                                         family, delta_sib, delta_cou, act_me, act_cme, inter, beta_me, beta_cme, m_me, m_cme, eta, resid, W, dev);
+            chng_flag = coord_des_onerun(pme, nn, K1, lambda, cur_delta, chng_flag, tau, gamma, X, yy,
+                                         family, delta_sib, delta_cou, act, inter, beta, mg, eta, resid, W, dev);
           }
 
         }
@@ -2069,28 +2034,16 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
         //Update active set
         int num_act = 0;
         int num_scr = 0;
-        for (int j=0;j<pme;j++){
-          if ((abs(beta_me[j])>0.0||(act_vec[j]>0.0))){ //
-            act_me[j] = true;
+        for (int j=0;j<pp;j++){
+          if ((abs(beta[j])>0.0||(act_vec[j]>0.0))){ //
+            act[j] = true;
             num_act ++;
-            scr_me[j] = true;
+            scr[j] = true;
             num_scr ++;
           }
           else{
-            scr_me[j] = false;
-            act_me[j] = false;
-          }
-        }
-        for (int j=0;j<pcme;j++){
-          if ((abs(beta_cme[j])>0.0)||(act_vec[j+pme]>0.0)){ //
-            act_cme[j] = true;
-            num_act ++;
-            scr_cme[j] = true;
-            num_scr ++;
-          }
-          else{
-            act_cme[j] = false;
-            scr_cme[j] = false;
+            scr[j] = false;
+            act[j] = false;
           }
         }
 
@@ -2100,16 +2053,16 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
         chng_flag = false; //change flag
 
         while (cont){
-          // cout << it_inner << endl;
+          cout << "it_inner: " << it_inner << endl;
 
           //Increment count and update flags
           it_inner ++;
           if (lambda_it && screen_ind && a>0 && b>0){
-            chng_flag = coord_des_onerun(pme, pcme, nn, lambda, cur_delta, chng_flag, tau, gamma, X_me, X_cme, yy,
-                                         family, delta_sib, delta_cou, scr_me, scr_cme, inter, beta_me, beta_cme, m_me, m_cme, eta, resid, W, dev);
+            chng_flag = coord_des_onerun(pme, nn, K1, lambda, cur_delta, chng_flag, tau, gamma, X, yy,
+                                         family, delta_sib, delta_cou, scr, inter, beta, mg, eta, resid, W, dev);
           } else {
-            chng_flag = coord_des_onerun(pme, pcme, nn, lambda, cur_delta, chng_flag, tau, gamma, X_me, X_cme, yy,
-                                         family, delta_sib, delta_cou, act_me, act_cme, inter, beta_me, beta_cme, m_me, m_cme, eta, resid, W, dev);
+            chng_flag = coord_des_onerun(pme, nn, K1, lambda, cur_delta, chng_flag, tau, gamma, X, yy,
+                                         family, delta_sib, delta_cou, act, inter, beta, mg, eta, resid, W, dev);
           }
 
           //Update cont flag for termination
@@ -2119,36 +2072,22 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
         }//end while
 
 
-        // Rcout << accumulate(act_me.begin(),act_me.end(),0) << endl;
-        // Rcout << accumulate(act_cme.begin(),act_cme.end(),0) << endl;
+        Rcout << accumulate(act.begin(),act.end(),0) << endl;
         //Update active set
         num_act = 0;
         num_scr = 0;
-        for (int j=0;j<pme;j++){
-          if ((abs(beta_me[j])>0.0)){ //||(act_vec[j]>0.0)
-            act_me[j] = true;
+        for (int j=0;j<pp;j++){
+          if ((abs(beta[j])>0.0)){ //||(act_vec[j]>0.0)
+            act[j] = true;
             num_act ++;
-            scr_me[j] = true;
+            scr[j] = true;
             num_scr ++;
           }
           else{
-            scr_me[j] = false;
-            act_me[j] = false;
+            scr[j] = false;
+            act[j] = false;
           }
         }
-        for (int j=0;j<pcme;j++){
-          if ((abs(beta_cme[j])>0.0)){ //||(act_vec[j+pme]>0.0)
-            act_cme[j] = true;
-            num_act ++;
-            scr_cme[j] = true;
-            num_scr ++;
-          }
-          else{
-            act_cme[j] = false;
-            scr_cme[j] = false;
-          }
-        }
-
 
       }
 
@@ -2158,26 +2097,26 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
         //Copy into beta_mat, and warm-start next cycle
         int betacount = 0;
       int betanz = 0;
-      for (int k=0;k<pme;k++){
-        if (abs(beta_me[k])>0.0){
+      for (int k=0;k<pp;k++){
+        if (abs(beta[k])>0.0){
           betanz++;
         }
-        beta_mat(betacount,a) = beta_me[k];
+        beta_mat(betacount,a) = beta[k];
         betacount++;
       }
-      for (int k=0;k<pcme;k++){
-        if (abs(beta_cme[k])>0.0){
-          betanz++;
-        }
-        beta_mat(betacount,a) = beta_cme[k];
-        betacount++;
-      }
+      // for (int k=0;k<pcme;k++){
+      //   if (abs(beta_cme[k])>0.0){
+      //     betanz++;
+      //   }
+      //   beta_mat(betacount,a) = beta_cme[k];
+      //   betacount++;
+      // }
       nz(a,b) = betanz;
       inter_mat(a,b)= inter;
       dev_mat(a,b) = dev;
 
       //Copy deltas
-      for (int k=0;k<pme;k++){
+      for (int k=0;k<J;k++){
         delta_sib_mat(k,a) = delta_sib[k];
         delta_cou_mat(k,a) = delta_cou[k];
       }
@@ -2188,20 +2127,20 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
       }
 
       //Copy screening data
-      for (int k=0;k<pme;k++){
+      for (int k=0;k<pp;k++){
         if (lambda_it && screen_ind && a>0 && b>0){
-          scr_mat(k,a) = scr_me[k];
+          scr_mat(k,a) = scr[k];
         } else {
-          scr_mat(k,a) = act_me[k];
+          scr_mat(k,a) = act[k];
         }
       }
-      for (int k=0;k<pcme;k++){
-        if (lambda_it && screen_ind && a>0 && b>0){
-          scr_mat(pme+k,a) = scr_cme[k];
-        } else {
-          scr_mat(pme+k,a) = act_cme[k];
-        }
-      }
+      // for (int k=0;k<pcme;k++){
+      //   if (lambda_it && screen_ind && a>0 && b>0){
+      //     scr_mat(pme+k,a) = scr_cme[k];
+      //   } else {
+      //     scr_mat(pme+k,a) = act_cme[k];
+      //   }
+      // }
 
     }//end nlambda.sib (a)
 
@@ -2221,14 +2160,14 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
       //Rescale betas to original scale
       inter_mat(a,b) = inter_mat(a,b);
       dev_mat(a,b) = dev_mat(a,b);
-      for (int k=0;k<pme;k++){
+      for (int k=0;k<pp;k++){
         // beta_cube(k,a,b) = beta_cube(k,a,b);
-        beta_cube(k,a,b) = beta_cube(k,a,b)/XX_me_sl(k);
+        beta_cube(k,a,b) = beta_cube(k,a,b)/XX_sl(k);
       }
-      for (int k=0;k<pcme;k++){
-        // beta_cube(pme+k,a,b) = beta_cube(pme+k,a,b);
-        beta_cube(pme+k,a,b) = beta_cube(pme+k,a,b)/XX_cme_sl(k);
-      }
+      // for (int k=0;k<pcme;k++){
+      //   // beta_cube(pme+k,a,b) = beta_cube(pme+k,a,b);
+      //   beta_cube(pme+k,a,b) = beta_cube(pme+k,a,b)/XX_cme_sl(k);
+      // }
     }
   }
 
