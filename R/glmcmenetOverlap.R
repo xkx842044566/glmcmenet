@@ -54,7 +54,7 @@ glmcmenetOverlap <- function(xme, xcme, y,
              it_warm=3, reset=1, screen_ind)
 
   ##convert latent beta coefficients (gamma's) to non-latent beta's
-  ret$beta <- array(0, dim=dim(result$coefficients))
+  ret$beta <- array(0, dim=dim(ret$coefficients))
   for (i in 1:nrow(incid.mat)) {
     id <- which(incid.mat[i, ] == 1)
     ret$beta[id, , ] <- ret$beta[id, , ] + ret$coefficients[which(grp.vec == i), , , drop = FALSE]
