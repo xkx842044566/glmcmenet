@@ -1,5 +1,6 @@
 exportPattern("^[[:alpha:]]+")
 import(Rcpp)
+import(Matrix)
 import(glmnet)
 import(ncvreg)
 import(hierNet)

@@ -17,9 +17,9 @@ cv.glmcmeOverlap <- function (xme, xcme, y, family = c("binomial", "poisson"), n
   over.mat <- over.temp <- Matrix(incid.mat %*% t(incid.mat)) # overlap matrix
   grp.vec <- rep(1:nrow(over.mat), times = diag(over.mat)) # group index vector
   X.latent <- expandX(cbind(xme, xcme), group)
-  XG <- newXG(X.latent, grp.vec, m=penalty.factor, ncolY=1, bilevel=TRUE)
-  K <- as.integer(table(XG$g))
-  K1 <- as.integer(if (min(XG$g)==0) cumsum(K) else c(0, cumsum(K)))
+  #XG <- newXG(X.latent, grp.vec, m=penalty.factor, ncolY=1, bilevel=TRUE)
+  K <- as.integer(table(grp.vec))
+  K1 <- as.integer(if (min(grp.vec)==0) cumsum(K) else c(0, cumsum(K)))
 
   act.vec <- rep(-1, ncol(X.latent))
   if (warm.str == "lasso") {
@@ -128,7 +128,7 @@ cv.glmcmeOverlap <- function (xme, xcme, y, family = c("binomial", "poisson"), n
     which = (foldid == i)
     fitobj <- glmcmenetOverlap(xme = xme[!which, , drop = F], xcme = xcme[!which,, drop = F], y = y[!which],  family=family,
                         lambda.sib = parms1.min[1],lambda.cou = parms1.min[2], gamma = gamma_vec,
-                        tau = tau_vec, act.vec = act.vec, penalty.factor=XG$m, max.lambda = max.lambda,
+                        tau = tau_vec, act.vec = act.vec, penalty.factor=penalty.factor, max.lambda = max.lambda,
                         it.max = it.max.cv, screen_ind=F,str=F)
     xtest <- xmat[which, , drop = F]
     yhat <- predictcmeOverlap(fitobj, xtest, type="response")
@@ -165,7 +165,7 @@ cv.glmcmeOverlap <- function (xme, xcme, y, family = c("binomial", "poisson"), n
     fitobj <- glmcmenetOverlap(xme = xme[!which, , drop = F], xcme = xcme[!which,
                                                                    , drop = F], y = y[!which], family=family,
                         lambda.sib = lambda.sib,lambda.cou = lambda.cou, gamma = parms2.min[1],
-                        tau = parms2.min[2], act.vec = act.vec, penalty.factor=XG$m, max.lambda = max.lambda,
+                        tau = parms2.min[2], act.vec = act.vec, penalty.factor=penalty.factor, max.lambda = max.lambda,
                         it.max = it.max.cv, screen_ind=screen_ind,str=F)
     xtest <- xmat[which, , drop = F]
     yhat <- predictcmeOverlap(fitobj, xtest, type="response")
