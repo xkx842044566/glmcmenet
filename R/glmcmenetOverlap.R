@@ -32,9 +32,9 @@ glmcmenetOverlap <- function(xme, xcme, y,
     cat("      Now conducting non-overlapping group selection ...")
   }
 
-  XG <- newXG(X.latent, grp.vec, ncolY=1, bilevel=TRUE)
-  K <- as.integer(table(XG$g))
-  K1 <- as.integer(if (min(XG$g)==0) cumsum(K) else c(0, cumsum(K)))
+  #XG <- newXG(X.latent, grp.vec, ncolY=1, bilevel=TRUE)
+  K <- as.integer(table(grp.vec))
+  K1 <- as.integer(if (min(grp.vec)==0) cumsum(K) else c(0, cumsum(K)))
 
   family <- match.arg(family)
   if (!is.double(penalty.factor)) penalty.factor <- as.double(penalty.factor)
