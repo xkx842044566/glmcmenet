@@ -11,13 +11,13 @@ glmcmenetOverlap <- function(xme, xcme, y,
                              it.max = 250, screen_ind=F,str=F) {
 
   # Error checking
-  if (is.matrix(X)) {
-    tmp <- try(X <- as.matrix(X), silent=TRUE)
-    if (class(tmp)[1] == "try-error")  {
-      stop("X must be a matrix or able to be coerced to a matrix")
-    }
-  }
-  if (storage.mode(X)=="integer") X <- 1.0*X
+  # if (is.matrix(X)) {
+  #   tmp <- try(X <- as.matrix(X), silent=TRUE)
+  #   if (class(tmp)[1] == "try-error")  {
+  #     stop("X must be a matrix or able to be coerced to a matrix")
+  #   }
+  # }
+  # if (storage.mode(X)=="integer") X <- 1.0*X
 
   group <- grouplist(cbind(xme, xcme))
 

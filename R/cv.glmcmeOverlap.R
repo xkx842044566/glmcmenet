@@ -17,7 +17,7 @@ cv.glmcmeOverlap <- function (xme, xcme, y, family = c("binomial", "poisson"), n
   over.mat <- over.temp <- Matrix(incid.mat %*% t(incid.mat)) # overlap matrix
   grp.vec <- rep(1:nrow(over.mat), times = diag(over.mat)) # group index vector
   X.latent <- expandX(cbind(xme, xcme), group)
-  XG <- newXG(X.latent, grp.vec, ncolY=1, bilevel=TRUE)
+  XG <- newXG(X.latent, grp.vec, m=penalty.factor, ncolY=1, bilevel=TRUE)
   K <- as.integer(table(XG$g))
   K1 <- as.integer(if (min(XG$g)==0) cumsum(K) else c(0, cumsum(K)))
 
@@ -27,7 +27,7 @@ cv.glmcmeOverlap <- function (xme, xcme, y, family = c("binomial", "poisson"), n
     lasfit <- cvlas$glmnet.fit
     lasind <- which(lasfit$beta[, which(cvlas$lambda ==cvlas$lambda.min)] != 0)
     for(l in c(2*lasind-1,2*lasind)){
-      act_vec[(K1[l]+1):K1[l+1]] <- 1
+      act.vec[(K1[l]+1):K1[l+1]] <- 1
     }
   } else if (warm.str == "adaptive_lasso") {
     cv.ridge <- cv.glmnet(xme,y, family=family, alpha=0)
@@ -38,7 +38,7 @@ cv.glmcmeOverlap <- function (xme, xcme, y, family = c("binomial", "poisson"), n
     aplasfit <- cvaplas$glmnet.fit
     aplasind <- which(aplasfit$beta[, which(cvaplas$lambda ==cvaplas$lambda.min)] != 0)
     for(l in c(2*aplasind-1,2*aplasind)){
-      act_vec[(K1[l]+1):K1[l+1]] <- 1
+      act.vec[(K1[l]+1):K1[l+1]] <- 1
     }
   }else if (warm.str == "elastic") {
     # control <- trainControl(method = "repeatedcv",
@@ -59,14 +59,14 @@ cv.glmcmeOverlap <- function (xme, xcme, y, family = c("binomial", "poisson"), n
     fitela <- cv.ela$glmnet.fit
     elaind <- which(fitela$beta[,which(cv.ela$lambda==cv.ela$lambda.min)]!=0) #fitela$beta@i+1
     for(l in c(2*elaind-1,2*elaind)){
-      act_vec[(K1[l]+1):K1[l+1]] <- 1
+      act.vec[(K1[l]+1):K1[l+1]] <- 1
     }
   } else if (warm.str == "ncvreg") {
     cvncv <- cv.ncvreg(xme,y,family = family,penalty="MCP")
     ncvfit <-cvncv$fit
     ncvind <- which(ncvfit$beta[,which(cvncv$lambda==cvncv$lambda.min)]!=0)[-1]-1
     for(l in c(2*ncvind-1,2*ncvind)){
-      act_vec[(K1[l]+1):K1[l+1]] <- 1
+      act.vec[(K1[l]+1):K1[l+1]] <- 1
     }
   } else if (warm.str == "NULL") {
     act.vec <- rep(1, ncol(X.latent))
@@ -128,7 +128,7 @@ cv.glmcmeOverlap <- function (xme, xcme, y, family = c("binomial", "poisson"), n
     which = (foldid == i)
     fitobj <- glmcmenetOverlap(xme = xme[!which, , drop = F], xcme = xcme[!which,, drop = F], y = y[!which],  family=family,
                         lambda.sib = parms1.min[1],lambda.cou = parms1.min[2], gamma = gamma_vec,
-                        tau = tau_vec, act.vec = act.vec, penalty.factor=penalty.factor, max.lambda = max.lambda,
+                        tau = tau_vec, act.vec = act.vec, penalty.factor=XG$m, max.lambda = max.lambda,
                         it.max = it.max.cv, screen_ind=F,str=F)
     xtest <- xmat[which, , drop = F]
     yhat <- predictcmeOverlap(fitobj, xtest, type="response")
@@ -165,7 +165,7 @@ cv.glmcmeOverlap <- function (xme, xcme, y, family = c("binomial", "poisson"), n
     fitobj <- glmcmenetOverlap(xme = xme[!which, , drop = F], xcme = xcme[!which,
                                                                    , drop = F], y = y[!which], family=family,
                         lambda.sib = lambda.sib,lambda.cou = lambda.cou, gamma = parms2.min[1],
-                        tau = parms2.min[2], act.vec = act.vec, penalty.factor=penalty.factor, max.lambda = max.lambda,
+                        tau = parms2.min[2], act.vec = act.vec, penalty.factor=XG$m, max.lambda = max.lambda,
                         it.max = it.max.cv, screen_ind=screen_ind,str=F)
     xtest <- xmat[which, , drop = F]
     yhat <- predictcmeOverlap(fitobj, xtest, type="response")
