@@ -21,13 +21,12 @@ loss <- function(fitobj,y,yhat,family,type.measure=c("deviance","class","adaptiv
     if (family=="binomial") {
       val <- -2*(y*log(yhat)+(1-y)*log(1-yhat))+
         aperm(array(rep(log(selmat), times=dim(yhat)[1]), dim(yhat)[c(2,3,1)]),c(3,1,2))
-      val[val==-Inf] <-9999999
     }  else if (family=="poisson") {
       yly <- y*log(y)
       yly[y==0] <- 0
       val <- 2*(yly - y + yhat - y*log(yhat))+
         aperm(array(rep(log(selmat), times=dim(yhat)[1]), dim(yhat)[c(2,3,1)]),c(3,1,2))
-      val[val==-Inf] <-9999999
     }
+    val <- replace(val, val == -Inf, 9999999)
   }
 }
