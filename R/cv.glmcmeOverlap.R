@@ -1,6 +1,6 @@
 cv.glmcmeOverlap <- function (xme, xcme, y, family = c("binomial", "poisson"), nfolds = 10, var.names = NULL, nlambda.sib = 20,
                           nlambda.cou = 20, lambda.min.ratio = 1e-06, ngamma = 20,
-                          max.gamma = 150, ntau = 20, max.tau = 0.2, tau.min.ratio = 0.001,
+                          max.gamma = 150, ntau = 20, max.tau = 0.5, tau.min.ratio = 0.001,
                           it.max = 250, it.max.cv = 25, type.measure=c("deviance","class"),
                           warm.str = c("lasso","adaptive_lasso","elastic","ncvreg","NULL"),penalty.factor=rep(1,2*ncol(xme)),
                           screen_ind=F,str=F)

@@ -722,12 +722,12 @@ bool coord_des_onerun(int pme, int nn, NumericVector& K1,
         int gind;
         if (g % 2 == 0) { //if this is sibling group
           gind = floor((double)g/2.0);
-          cur_delta[0] = delta_sib[gind] * mg[g];
-          cur_delta[1] = delta_cou[gind] * mg[g+1];
+          cur_delta[0] = delta_sib[gind]*mg[g];
+          cur_delta[1] = delta_cou[gind]*mg[g+1];
         } else { //if this is cousin group
           gind = floor((double)g/2.0); //index for cousin group
-          cur_delta[0] = delta_sib[gind] * mg[g-1];
-          cur_delta[1] = delta_cou[gind] * mg[g];
+          cur_delta[0] = delta_sib[gind]*mg[g-1];
+          cur_delta[1] = delta_cou[gind]*mg[g];
         }
 
         //Perform ME thresholding
@@ -757,11 +757,11 @@ bool coord_des_onerun(int pme, int nn, NumericVector& K1,
           double offset_cou = mcp(beta[j],lambda[1],gamma)-mcp(cur_beta,lambda[1],gamma);
 
           if (g % 2 == 0) {
-            delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * offset_sib )) * mg[g];
-            delta_cou[gind] = delta_cou[gind] * mg[g+1]; //(exp(-(tau/lambda[1]) * offset_cou ))
+            delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g] * offset_sib )) ;
+            //delta_cou[gind] = delta_cou[gind] ; //(exp(-(tau/lambda[1]) * offset_cou ))
           } else {
-            delta_sib[gind] = delta_sib[gind] * mg[g-1]; //(exp(-(tau/lambda[0]) * offset_sib ))
-            delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * offset_cou )) * mg[g];
+            //delta_sib[gind] = delta_sib[gind] ; //(exp(-(tau/lambda[0]) * offset_sib ))
+            delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g] * offset_cou )) ;
           }
 
           //Update flag
@@ -800,31 +800,31 @@ bool coord_des_onerun(int pme, int nn, NumericVector& K1,
               double offset_sib = mcp(beta[K1[g]],lambda[0],gamma)-mcp(cur_beta_me,lambda[0],gamma); // new - old (for me)
               double offset_cou = mcp(beta[K1[g]],lambda[1],gamma)-mcp(cur_beta_me,lambda[1],gamma);
               if (g % 2 == 0) {
-                delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * offset_sib )) * mg[g];
-                delta_cou[gind] = delta_cou[gind] * mg[g+1]; //(exp(-(tau/lambda[1]) * offset_cou ))
+                delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g] * offset_sib )) ;
+                //delta_cou[gind] = delta_cou[gind] ; //(exp(-(tau/lambda[1]) * offset_cou ))
               } else {
-                delta_sib[gind] = delta_sib[gind] * mg[g-1]; //(exp(-(tau/lambda[0]) * offset_sib ))
-                delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * offset_cou )) * mg[g];
+                //delta_sib[gind] = delta_sib[gind] ; //(exp(-(tau/lambda[0]) * offset_sib ))
+                delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g] * offset_cou )) ;
               }
 
               offset_sib = mcp(beta[j],lambda[0],gamma)-mcp(cur_beta_cme1,lambda[0],gamma); // new - old (for .|.+)
               offset_cou = mcp(beta[j],lambda[1],gamma)-mcp(cur_beta_cme1,lambda[1],gamma);
               if (g % 2 == 0) {
-                delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * offset_sib )) * mg[g];
-                delta_cou[gind] = delta_cou[gind] * mg[g+1]; //(exp(-(tau/lambda[1]) * offset_cou ))
+                delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g] * offset_sib )) ;
+                //delta_cou[gind] = delta_cou[gind] ; //(exp(-(tau/lambda[1]) * offset_cou ))
               } else {
-                delta_sib[gind] = delta_sib[gind] * mg[g-1]; //(exp(-(tau/lambda[0]) * offset_sib ))
-                delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * offset_cou )) * mg[g];
+                //delta_sib[gind] = delta_sib[gind] ; //(exp(-(tau/lambda[0]) * offset_sib ))
+                delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g] * offset_cou )) ;
               }
 
               offset_sib = mcp(beta[j+1],lambda[0],gamma)-mcp(cur_beta_cme2,lambda[0],gamma); // new - old (for .|.-)
               offset_cou = mcp(beta[j+1],lambda[1],gamma)-mcp(cur_beta_cme2,lambda[1],gamma);
               if (g % 2 == 0) {
-                delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * offset_sib )) * mg[g];
-                delta_cou[gind] = delta_cou[gind] * mg[g+1]; //(exp(-(tau/lambda[1]) * offset_cou ))
+                delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g] * offset_sib )) ;
+                //delta_cou[gind] = delta_cou[gind] ; //(exp(-(tau/lambda[1]) * offset_cou ))
               } else {
-                delta_sib[gind] = delta_sib[gind] * mg[g-1]; //(exp(-(tau/lambda[0]) * offset_sib ))
-                delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * offset_cou )) * mg[g];
+                //delta_sib[gind] = delta_sib[gind] ; //(exp(-(tau/lambda[0]) * offset_sib ))
+                delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g] * offset_cou )) ;
               }
               //residuals shouldn't change
 
@@ -856,31 +856,31 @@ bool coord_des_onerun(int pme, int nn, NumericVector& K1,
               double offset_sib = mcp(beta[K1[g]],lambda[0],gamma)-mcp(cur_beta_me,lambda[0],gamma); // new - old (for me)
               double offset_cou = mcp(beta[K1[g]],lambda[1],gamma)-mcp(cur_beta_me,lambda[1],gamma);
               if (g % 2 == 0) {
-                delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * offset_sib )) * mg[g];
-                delta_cou[gind] = delta_cou[gind] * mg[g+1]; //(exp(-(tau/lambda[1]) * offset_cou )) *
+                delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g] * offset_sib )) ;
+                //delta_cou[gind] = delta_cou[gind] ; //(exp(-(tau/lambda[1]) * offset_cou ))
               } else {
-                delta_sib[gind] = delta_sib[gind] * mg[g-1]; //(exp(-(tau/lambda[0]) * offset_sib )) *
-                delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * offset_cou )) * mg[g];
+                //delta_sib[gind] = delta_sib[gind] ; //(exp(-(tau/lambda[0]) * offset_sib ))
+                delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g] * offset_cou )) ;
               }
 
               offset_sib = mcp(beta[j],lambda[0],gamma)-mcp(cur_beta_cme1,lambda[0],gamma); // new - old (for .|.+)
               offset_cou = mcp(beta[j],lambda[1],gamma)-mcp(cur_beta_cme1,lambda[1],gamma);
               if (g % 2 == 0) {
-                delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * offset_sib )) * mg[g];
-                delta_cou[gind] = delta_cou[gind] * mg[g+1]; //(exp(-(tau/lambda[1]) * offset_cou )) *
+                delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g] * offset_sib )) ;
+                //delta_cou[gind] = delta_cou[gind] ; //(exp(-(tau/lambda[1]) * offset_cou ))
               } else {
-                delta_sib[gind] = delta_sib[gind] * mg[g-1]; //(exp(-(tau/lambda[0]) * offset_sib )) *
-                delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * offset_cou )) * mg[g];
+                //delta_sib[gind] = delta_sib[gind] ; //(exp(-(tau/lambda[0]) * offset_sib ))
+                delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g] * offset_cou )) ;
               }
 
               offset_sib = mcp(beta[j-1],lambda[0],gamma)-mcp(cur_beta_cme2,lambda[0],gamma); // new - old (for .|.-)
               offset_cou = mcp(beta[j-1],lambda[1],gamma)-mcp(cur_beta_cme2,lambda[1],gamma);
               if (g % 2 == 0) {
-                delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * offset_sib )) * mg[g];
-                delta_cou[gind] = delta_cou[gind] * mg[g+1]; //(exp(-(tau/lambda[1]) * offset_cou )) *
+                delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g] * offset_sib )) ;
+                //delta_cou[gind] = delta_cou[gind] ; //(exp(-(tau/lambda[1]) * offset_cou ))
               } else {
-                delta_sib[gind] = delta_sib[gind] * mg[g-1]; //(exp(-(tau/lambda[0]) * offset_sib )) *
-                delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * offset_cou )) * mg[g];
+                //delta_sib[gind] = delta_sib[gind] ; //(exp(-(tau/lambda[0]) * offset_sib ))
+                delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g] * offset_cou )) ;
               }
 
               //residuals shouldn't change
@@ -1959,7 +1959,7 @@ List cme(NumericMatrix& XX, NumericVector& yy, CharacterVector& family,
         //   num_act ++;
         //   num_scr ++;
         // }
-        //cout << "num_act: " << num_act << endl;
+        // cout << "num_act: " << num_act << endl;
         if ( (lambda[0]+lambda[1]) >= lambda_max){
           goto cycend;
         }
@@ -2005,11 +2005,11 @@ List cme(NumericMatrix& XX, NumericVector& yy, CharacterVector& family,
           //delta_cou[j] = delta_cou[j] * ( exp( -(tau/lambda[1]) * m_me[j] * mcp(beta_me[j],lambda[1],gamma) ) );
           int gind = floor((double)g/2.0); //index for sibling group
           if (g % 2 == 0) {
-            delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mcp(beta[j],lambda[0],gamma) )) * mg[g];
-            delta_cou[gind] = delta_cou[gind] *  mg[g+1]; //(exp(-(tau/lambda[1]) * mcp(beta[j],lambda[1],gamma) )) *
+            delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g] * mcp(beta[j],lambda[0],gamma) )) ;
+            //delta_cou[gind] = delta_cou[gind]; //(exp(-(tau/lambda[1]) * mcp(beta[j],lambda[1],gamma) )) *
           } else {
-            delta_sib[gind] = delta_sib[gind] * mg[g-1]; //(exp(-(tau/lambda[0]) * mcp(beta[j],lambda[0],gamma) )) *
-            delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mcp(beta[j],lambda[1],gamma) )) * mg[g];
+            //delta_sib[gind] = delta_sib[gind]; //(exp(-(tau/lambda[0]) * mcp(beta[j],lambda[0],gamma) )) *
+            delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g] * mcp(beta[j],lambda[1],gamma) )) ;
           }
         }
       }
@@ -2053,7 +2053,7 @@ List cme(NumericMatrix& XX, NumericVector& yy, CharacterVector& family,
         chng_flag = false; //change flag
 
         while (cont){
-          //cout << "it_inner: " << it_inner << endl;
+          // cout << "it_inner: " << it_inner << endl;
 
           //Increment count and update flags
           it_inner ++;
@@ -2072,7 +2072,7 @@ List cme(NumericMatrix& XX, NumericVector& yy, CharacterVector& family,
         }//end while
 
 
-        //Rcout << accumulate(act.begin(),act.end(),0) << endl;
+        // Rcout << accumulate(act.begin(),act.end(),0) << endl;
         //Update active set
         num_act = 0;
         num_scr = 0;
