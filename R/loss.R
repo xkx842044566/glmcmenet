@@ -1,5 +1,5 @@
 loss <- function(fitobj,y,yhat,family,type.measure=c("deviance","class","adaptive_dev")){
-  if(class(fitobj)=="glmcmeOverlap"){
+  if("glmcmeOverlap" %in% class(fitobj)){
      selmat <- apply(fitobj$beta,c(2,3),function(x){return(length(which(x!=0)))})
   }else{
     selmat <- apply(fitobj$coefficients,c(2,3),function(x){return(length(which(x!=0)))})
