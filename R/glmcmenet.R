@@ -52,7 +52,7 @@ glmcmenet <- function (xme, xcme, y, family=c("binomial", "poisson"),
   ret$y <- y
   ret$family <- family
 
-  #class(ret) = "glmcme"
+  class(ret) = "glmcme"
 
   return(ret)
 }

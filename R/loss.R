@@ -1,5 +1,9 @@
 loss <- function(fitobj,y,yhat,family,type.measure=c("deviance","class","adaptive_dev")){
-  selmat <- apply(fitobj$beta,c(2,3),function(x){return(length(which(x!=0)))})
+  if(class(fitobj)=="glmcmeOverlap"){
+     selmat <- apply(fitobj$beta,c(2,3),function(x){return(length(which(x!=0)))})
+  }else{
+    selmat <- apply(fitobj$coefficients,c(2,3),function(x){return(length(which(x!=0)))})
+  }
   if(type.measure=="deviance"){
       val <- array(NA, dim = dim(yhat))
     if (family=="binomial") {

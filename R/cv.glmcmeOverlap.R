@@ -1,7 +1,7 @@
 cv.glmcmeOverlap <- function (xme, xcme, y, family = c("binomial", "poisson"), nfolds = 10, var.names = NULL, nlambda.sib = 20,
                           nlambda.cou = 20, lambda.min.ratio = 1e-06, ngamma = 20,
                           max.gamma = 150, ntau = 20, max.tau = 0.5, tau.min.ratio = 0.001,
-                          it.max = 250, it.max.cv = 25, type.measure=c("deviance","class"),
+                          it.max = 250, it.max.cv = 25, type.measure=c("deviance","class","adaptive_dev"),
                           warm.str = c("lasso","adaptive_lasso","elastic","ncvreg","NULL"),penalty.factor=rep(1,2*ncol(xme)),
                           screen_ind=F,str=F)
 {
@@ -23,7 +23,7 @@ cv.glmcmeOverlap <- function (xme, xcme, y, family = c("binomial", "poisson"), n
 
   act.vec <- rep(-1, ncol(X.latent))
   if (warm.str == "lasso") {
-    cvlas <- cv.glmnet(xme, y,family = family,alpha=1,type.measure = type.measure)
+    cvlas <- cv.glmnet(xme, y,family = family,alpha=1,type.measure = "deviance")
     lasfit <- cvlas$glmnet.fit
     lasind <- which(lasfit$beta[, which(cvlas$lambda ==cvlas$lambda.min)] != 0)
     for(l in c(2*lasind-1,2*lasind)){
@@ -34,7 +34,7 @@ cv.glmcmeOverlap <- function (xme, xcme, y, family = c("binomial", "poisson"), n
     w3 <- 1/abs(matrix(coef(cv.ridge, s=cv.ridge$lambda.min)
                        [, 1][2:(ncol(xme)+1)]))^1 ## Using gamma = 1
     w3[w3[,1] == Inf] <- 999999999
-    cvaplas <- cv.glmnet(xme,y,family=family, alpha=1, type.measure=type.measure, penalty.factor=w3)
+    cvaplas <- cv.glmnet(xme,y,family=family, alpha=1, type.measure="deviance", penalty.factor=w3)
     aplasfit <- cvaplas$glmnet.fit
     aplasind <- which(aplasfit$beta[, which(cvaplas$lambda ==cvaplas$lambda.min)] != 0)
     for(l in c(2*aplasind-1,2*aplasind)){
@@ -55,7 +55,7 @@ cv.glmcmeOverlap <- function (xme, xcme, y, family = c("binomial", "poisson"), n
     #                     tuneLength = 25,
     #                     trControl = control))
     #fitela <- glmnet(cbind(xme,xcme),y, family=family, alpha=cvela$bestTune$alpha,lambda = cvela$bestTune$lambda)#cv.elastic$finalModel
-    cv.ela <- cv.glmnet(xme,y, family=family, alpha=0.25,type.measure=type.measure)#cv.elastic$finalModel
+    cv.ela <- cv.glmnet(xme,y, family=family, alpha=0.25,type.measure="deviance")#cv.elastic$finalModel
     fitela <- cv.ela$glmnet.fit
     elaind <- which(fitela$beta[,which(cv.ela$lambda==cv.ela$lambda.min)]!=0) #fitela$beta@i+1
     for(l in c(2*elaind-1,2*elaind)){
@@ -132,7 +132,7 @@ cv.glmcmeOverlap <- function (xme, xcme, y, family = c("binomial", "poisson"), n
                         it.max = it.max.cv, screen_ind=F,str=F)
     xtest <- xmat[which, , drop = F]
     yhat <- predictcmeOverlap(fitobj, xtest, type="response")
-    predmat[which, , ] <- loss(y[which],yhat,family=family,type.measure=type.measure)
+    predmat[which, , ] <- loss(fitobj,y[which],yhat,family=family,type.measure=type.measure)
 
   }
   cat("\n")
@@ -169,7 +169,7 @@ cv.glmcmeOverlap <- function (xme, xcme, y, family = c("binomial", "poisson"), n
                         it.max = it.max.cv, screen_ind=screen_ind,str=F)
     xtest <- xmat[which, , drop = F]
     yhat <- predictcmeOverlap(fitobj, xtest, type="response")
-    predmat[which, , ] <- loss(y[which],yhat,family=family,type.measure=type.measure)
+    predmat[which, , ] <- loss(fitobj,y[which],yhat,family=family,type.measure=type.measure)
   }
   cat("\n")
   cvm.lambda <- apply(predmat, c(2, 3), mean)

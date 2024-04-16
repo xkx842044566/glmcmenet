@@ -73,8 +73,8 @@ glmcmenetOverlap <- function(xme, xcme, y,
     ret$overlap.mat <- over.mat
   }
 
-  #val <- structure(ret, class = c('glmcmeOverlap', 'glmcme'))
-  return(ret)
+  val <- structure(ret, class = c('glmcmeOverlap', 'glmcme'))
+  return(val)
 }
 # -------------------------------------------------------------------------------
 
