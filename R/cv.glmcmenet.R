@@ -114,7 +114,7 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
                      it.max = it.max.cv, screen_ind=F,str=str)
     xtest <- xmat[which, , drop = F]
     yhat <- predictcme(fitobj, xtest, type="response")
-    predmat[which, , ] <- loss(y[which],yhat,family=family,type.measure=type.measure)
+    predmat[which, , ] <- loss(fitobj,y[which],yhat,family=family,type.measure=type.measure)
 
   }
   cat("\n")
@@ -151,7 +151,7 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
                      it.max = it.max.cv, screen_ind=screen_ind,str=str)
     xtest <- xmat[which, , drop = F]
     yhat <- predictcme(fitobj, xtest, type="response")
-    predmat[which, , ] <- loss(y[which],yhat,family=family,type.measure=type.measure)
+    predmat[which, , ] <- loss(fitobj,y[which],yhat,family=family,type.measure=type.measure)
   }
   cat("\n")
   cvm.lambda <- apply(predmat, c(2, 3), mean)
