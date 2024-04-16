@@ -1,7 +1,7 @@
 cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfolds = 10, var.names = NULL, nlambda.sib = 20,
           nlambda.cou = 20, lambda.min.ratio = 1e-06, ngamma = 20,
           max.gamma = 150, ntau = 20, max.tau = 0.2, tau.min.ratio = 0.001,
-          it.max = 250, it.max.cv = 25, type.measure=c("deviance","class"),
+          it.max = 250, it.max.cv = 25, type.measure=c("deviance","class","adaptive_dev"),
           warm.str = c("lasso","adaptive_lasso","elastic","ncvreg","NULL"),penalty.factor=rep(1,ncol(xme) + ncol(xcme)),
           screen_ind=F,str=F)
 {
@@ -13,7 +13,7 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
   min.gamma <- max(max(apply(xmat,2,function(x){8*nrow(xmat)/sum(x^2)}))+ 0.001,1/(0.125 - min.tau) + 0.001)
   act.vec <- rep(-1, ncol(xme) + ncol(xcme))
   if (warm.str == "lasso") {
-      cvlas <- cv.glmnet(cbind(xme, xcme), y,family = family,alpha=1,type.measure = type.measure)
+      cvlas <- cv.glmnet(cbind(xme, xcme), y,family = family,alpha=1,type.measure = "deviance")
       lasfit <- cvlas$glmnet.fit
       lasind <- which(lasfit$beta[, which(cvlas$lambda ==cvlas$lambda.min)] != 0)
       act.vec[lasind] <- 1
@@ -22,7 +22,7 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
     w3 <- 1/abs(matrix(coef(cv.ridge, s=cv.ridge$lambda.min)
                        [, 1][2:(ncol(cbind(xme,xcme))+1)] ))^1 ## Using gamma = 1
     w3[w3[,1] == Inf] <- 999999999
-    cvaplas <- cv.glmnet(cbind(xme,xcme),y,family=family, alpha=1, type.measure=type.measure, penalty.factor=w3)
+    cvaplas <- cv.glmnet(cbind(xme,xcme),y,family=family, alpha=1, type.measure="deviance", penalty.factor=w3)
     aplasfit <- cvaplas$glmnet.fit
     aplasind <- which(aplasfit$beta[, which(cvaplas$lambda ==cvaplas$lambda.min)] != 0)[-1]
     act.vec[aplasind] <- 1
@@ -41,7 +41,7 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
     #                     tuneLength = 25,
     #                     trControl = control))
     #fitela <- glmnet(cbind(xme,xcme),y, family=family, alpha=cvela$bestTune$alpha,lambda = cvela$bestTune$lambda)#cv.elastic$finalModel
-    cv.ela <- cv.glmnet(cbind(xme,xcme),y, family=family, alpha=0.25,type.measure=type.measure)#cv.elastic$finalModel
+    cv.ela <- cv.glmnet(cbind(xme,xcme),y, family=family, alpha=0.25,type.measure="deviance")#cv.elastic$finalModel
     fitela <- cv.ela$glmnet.fit
     elaind <- which(fitela$beta[,which(cv.ela$lambda==cv.ela$lambda.min)]!=0) #fitela$beta@i+1
     act.vec[elaind] <- 1
