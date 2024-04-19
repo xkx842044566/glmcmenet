@@ -25,8 +25,9 @@ cv.glmcmeOverlap <- function (xme, xcme, y, family = c("binomial", "poisson"), n
     lasfit <- cvlas$glmnet.fit
     lasind <- which(lasfit$beta[, which(cvlas$lambda ==cvlas$lambda.min)] != 0)
     incid.mat.cum <- t(apply(incid.mat,1,cumsum))
-    incidind <- which(incid.mat.cum[,lasind]*incid.mat[,lasind] != 0, arr.ind = TRUE)
-    lasind <- (incidind[, 1] - 1) * diag(over.mat)[1] + (incid.mat.cum[,lasind]*incid.mat[,lasind])[incidind]
+    incidind <- which((matrix(incid.mat.cum[,lasind],ncol=length(lasind))*matrix(incid.mat[,lasind],ncol=length(lasind))) != 0, arr.ind = TRUE)
+    lasind <- (incidind[, 1] - 1) * diag(over.mat)[1] +
+      (matrix(incid.mat.cum[,lasind],ncol=length(lasind))*matrix(incid.mat[,lasind],ncol=length(lasind)))[incidind]
     act.vec[lasind] <- 1
     #for(l in c(2*lasind-1,2*lasind)){
     #  act.vec[(K1[l]+1):K1[l+1]] <- 1
@@ -43,8 +44,9 @@ cv.glmcmeOverlap <- function (xme, xcme, y, family = c("binomial", "poisson"), n
     #  act.vec[(K1[l]+1):K1[l+1]] <- 1
     #}
     incid.mat.cum <- t(apply(incid.mat,1,cumsum))
-    incidind <- which(incid.mat.cum[,aplasind]*incid.mat[,aplasind] != 0, arr.ind = TRUE)
-    aplasind <- (incidind[, 1] - 1) * diag(over.mat)[1] + (incid.mat.cum[,aplasind]*incid.mat[,aplasind])[incidind]
+    incidind <- which((matrix(incid.mat.cum[,aplasind],ncol=length(aplasind))*matrix(incid.mat[,aplasind],ncol=length(aplasind))) != 0, arr.ind = TRUE)
+    aplasind <- (incidind[, 1] - 1) * diag(over.mat)[1] +
+      (matrix(incid.mat.cum[,aplasind],ncol=length(aplasind))*matrix(incid.mat[,aplasind],ncol=length(aplasind)))[incidind]
     act.vec[aplasind] <- 1
   }else if (warm.str == "elastic") {
     # control <- trainControl(method = "repeatedcv",
@@ -76,8 +78,9 @@ cv.glmcmeOverlap <- function (xme, xcme, y, family = c("binomial", "poisson"), n
     ncvfit <-cvncv$fit
     ncvind <- which(ncvfit$beta[,which(cvncv$lambda==cvncv$lambda.min)]!=0)[-1]-1
     incid.mat.cum <- t(apply(incid.mat,1,cumsum))
-    incidind <- which(incid.mat.cum[,ncvind]*incid.mat[,ncvind] != 0, arr.ind = TRUE)
-    ncvind <- (incidind[, 1] - 1) * diag(over.mat)[1] + (incid.mat.cum[,ncvind]*incid.mat[,ncvind])[incidind]
+    incidind <- which((matrix(incid.mat.cum[,ncvind],ncol=length(ncvind))*matrix(incid.mat[,ncvind],ncol=length(ncvind))) != 0, arr.ind = TRUE)
+    ncvind <- (incidind[, 1] - 1) * diag(over.mat)[1] +
+      (matrix(incid.mat.cum[,ncvind],ncol=length(ncvind))*matrix(incid.mat[,ncvind],ncol=length(ncvind)))[incidind]
     act.vec[ncvind] <- 1
     #for(l in c(2*ncvind-1,2*ncvind)){
     #  act.vec[(K1[l]+1):K1[l+1]] <- 1
