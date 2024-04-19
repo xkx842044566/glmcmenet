@@ -34,9 +34,9 @@ cv.glmcmeOverlap <- function (xme, xcme, y, family = c("binomial", "poisson"), n
   } else if (warm.str == "adaptive_lasso") {
     cv.ridge <- cv.glmnet(xmat,y, family=family, alpha=0)
     w3 <- 1/abs(matrix(coef(cv.ridge, s=cv.ridge$lambda.min)
-                       [, 1][2:(ncol(X.latent)+1)]))^1 ## Using gamma = 1
+                       [, 1][2:(ncol(xmat)+1)]))^1 ## Using gamma = 1
     w3[w3[,1] == Inf] <- 999999999
-    cvaplas <- cv.glmnet(X.latent,y,family=family, alpha=1, type.measure="deviance", penalty.factor=w3)
+    cvaplas <- cv.glmnet(xmat,y,family=family, alpha=1, type.measure="deviance", penalty.factor=w3)
     aplasfit <- cvaplas$glmnet.fit
     aplasind <- which(aplasfit$beta[, which(cvaplas$lambda ==cvaplas$lambda.min)] != 0)
     #for(l in c(2*aplasind-1,2*aplasind)){
