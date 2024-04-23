@@ -2,7 +2,7 @@ cv.glmcmeOverlap <- function (xme, xcme, y, family = c("binomial", "poisson"), n
                           nlambda.cou = 20, lambda.min.ratio = 1e-06, ngamma = 20,
                           max.gamma = 150, ntau = 20, max.tau = 0.5, tau.min.ratio = 0.001,
                           it.max = 250, it.max.cv = 25, type.measure=c("deviance","class","adaptive_dev"),
-                          warm.str = c("lasso","adaptive_lasso","elastic","ncvreg","NULL"),penalty.factor=rep(1,2*ncol(xme)),
+                          warm.str = c("lasso","adaptive_lasso","elastic","ncvreg","group_lasso","NULL"),penalty.factor=rep(1,2*ncol(xme)),
                           screen_ind=F,str=F)
 {
   pme <- ncol(xme)
@@ -21,33 +21,33 @@ cv.glmcmeOverlap <- function (xme, xcme, y, family = c("binomial", "poisson"), n
 
   act.vec <- rep(-1, ncol(X.latent))
   if (warm.str == "lasso") {
-    cvlas <- cv.glmnet(xme, y,family = family,alpha=1,type.measure = "deviance")
+    cvlas <- cv.glmnet(xmat, y,family = family,alpha=1,type.measure = "deviance")
     lasfit <- cvlas$glmnet.fit
     lasind <- which(lasfit$beta[, which(cvlas$lambda ==cvlas$lambda.min)] != 0)
-    # incid.mat.cum <- t(apply(incid.mat,1,cumsum))
-    # incidind <- which((matrix(incid.mat.cum[,lasind],ncol=length(lasind))*matrix(incid.mat[,lasind],ncol=length(lasind))) != 0, arr.ind = TRUE)
-    # lasind <- (incidind[, 1] - 1) * diag(over.mat)[1] +
-    #   (matrix(incid.mat.cum[,lasind],ncol=length(lasind))*matrix(incid.mat[,lasind],ncol=length(lasind)))[incidind]
-    # act.vec[lasind] <- 1
-    for(l in c(2*lasind-1,2*lasind)){
-     act.vec[(K1[l]+1):K1[l+1]] <- 1
-    }
+    incid.mat.cum <- t(apply(incid.mat,1,cumsum))
+    incidind <- which((matrix(incid.mat.cum[,lasind],ncol=length(lasind))*matrix(incid.mat[,lasind],ncol=length(lasind))) != 0, arr.ind = TRUE)
+    lasind <- (incidind[, 1] - 1) * diag(over.mat)[1] +
+      (matrix(incid.mat.cum[,lasind],ncol=length(lasind))*matrix(incid.mat[,lasind],ncol=length(lasind)))[incidind]
+    act.vec[lasind] <- 1
+    # for(l in c(2*lasind-1,2*lasind)){
+    #  act.vec[(K1[l]+1):K1[l+1]] <- 1
+    # }
   } else if (warm.str == "adaptive_lasso") {
-    cv.ridge <- cv.glmnet(xme,y, family=family, alpha=0)
+    cv.ridge <- cv.glmnet(xmat,y, family=family, alpha=0)
     w3 <- 1/abs(matrix(coef(cv.ridge, s=cv.ridge$lambda.min)
                        [, 1][2:(ncol(xmat)+1)]))^1 ## Using gamma = 1
     w3[w3[,1] == Inf] <- 999999999
     cvaplas <- cv.glmnet(xmat,y,family=family, alpha=1, type.measure="deviance", penalty.factor=w3)
     aplasfit <- cvaplas$glmnet.fit
     aplasind <- which(aplasfit$beta[, which(cvaplas$lambda ==cvaplas$lambda.min)] != 0)
-    for(l in c(2*aplasind-1,2*aplasind)){
-     act.vec[(K1[l]+1):K1[l+1]] <- 1
-    }
-    # incid.mat.cum <- t(apply(incid.mat,1,cumsum))
-    # incidind <- which((matrix(incid.mat.cum[,aplasind],ncol=length(aplasind))*matrix(incid.mat[,aplasind],ncol=length(aplasind))) != 0, arr.ind = TRUE)
-    # aplasind <- (incidind[, 1] - 1) * diag(over.mat)[1] +
-    #   (matrix(incid.mat.cum[,aplasind],ncol=length(aplasind))*matrix(incid.mat[,aplasind],ncol=length(aplasind)))[incidind]
-    # act.vec[aplasind] <- 1
+    #for(l in c(2*aplasind-1,2*aplasind)){
+    # act.vec[(K1[l]+1):K1[l+1]] <- 1
+    #}
+    incid.mat.cum <- t(apply(incid.mat,1,cumsum))
+    incidind <- which((matrix(incid.mat.cum[,aplasind],ncol=length(aplasind))*matrix(incid.mat[,aplasind],ncol=length(aplasind))) != 0, arr.ind = TRUE)
+    aplasind <- (incidind[, 1] - 1) * diag(over.mat)[1] +
+      (matrix(incid.mat.cum[,aplasind],ncol=length(aplasind))*matrix(incid.mat[,aplasind],ncol=length(aplasind)))[incidind]
+    act.vec[aplasind] <- 1
   }else if (warm.str == "elastic") {
     # control <- trainControl(method = "repeatedcv",
     #                         number = 5,
@@ -63,29 +63,41 @@ cv.glmcmeOverlap <- function (xme, xcme, y, family = c("binomial", "poisson"), n
     #                     tuneLength = 25,
     #                     trControl = control))
     #fitela <- glmnet(cbind(xme,xcme),y, family=family, alpha=cvela$bestTune$alpha,lambda = cvela$bestTune$lambda)#cv.elastic$finalModel
-    cv.ela <- cv.glmnet(xme,y, family=family, alpha=0.25,type.measure="deviance")#cv.elastic$finalModel
+    cv.ela <- cv.glmnet(xmat,y, family=family, alpha=0.25,type.measure="deviance")#cv.elastic$finalModel
     fitela <- cv.ela$glmnet.fit
     elaind <- which(fitela$beta[,which(cv.ela$lambda==cv.ela$lambda.min)]!=0) #fitela$beta@i+1
-    # incid.mat.cum <- t(apply(incid.mat,1,cumsum))
-    # incidind <- which(incid.mat.cum[,elaind]*incid.mat[,elaind] != 0, arr.ind = TRUE)
-    # elaind <- (incidind[, 1] - 1) * diag(over.mat)[1] + (incid.mat.cum[,elaind]*incid.mat[,elaind])[incidind]
-    # act.vec[elaind] <- 1
-    for(l in c(2*elaind-1,2*elaind)){
-     act.vec[(K1[l]+1):K1[l+1]] <- 1
-    }
+    incid.mat.cum <- t(apply(incid.mat,1,cumsum))
+    incidind <- which(incid.mat.cum[,elaind]*incid.mat[,elaind] != 0, arr.ind = TRUE)
+    elaind <- (incidind[, 1] - 1) * diag(over.mat)[1] + (incid.mat.cum[,elaind]*incid.mat[,elaind])[incidind]
+    act.vec[elaind] <- 1
+    # for(l in c(2*elaind-1,2*elaind)){
+    #  act.vec[(K1[l]+1):K1[l+1]] <- 1
+    # }
   } else if (warm.str == "ncvreg") {
-    cvncv <- cv.ncvreg(xme,y,family = family,penalty="MCP")
+    cvncv <- cv.ncvreg(xmat,y,family = family,penalty="MCP")
     ncvfit <-cvncv$fit
     ncvind <- which(ncvfit$beta[,which(cvncv$lambda==cvncv$lambda.min)]!=0)[-1]-1
+    incid.mat.cum <- t(apply(incid.mat,1,cumsum))
+    incidind <- which((matrix(incid.mat.cum[,ncvind],ncol=length(ncvind))*matrix(incid.mat[,ncvind],ncol=length(ncvind))) != 0, arr.ind = TRUE)
+    ncvind <- (incidind[, 1] - 1) * diag(over.mat)[1] +
+      (matrix(incid.mat.cum[,ncvind],ncol=length(ncvind))*matrix(incid.mat[,ncvind],ncol=length(ncvind)))[incidind]
+    act.vec[ncvind] <- 1
+    # for(l in c(2*ncvind-1,2*ncvind)){
+    #  act.vec[(K1[l]+1):K1[l+1]] <- 1
+    # }
+  } else if (warm.str == "group_lasso") {
+    cvlas <- cv.glmnet(xme, y,family = family,alpha=1,type.measure = "deviance")
+    lasfit <- cvlas$glmnet.fit
+    lasind <- which(lasfit$beta[, which(cvlas$lambda ==cvlas$lambda.min)] != 0)
     # incid.mat.cum <- t(apply(incid.mat,1,cumsum))
-    # incidind <- which((matrix(incid.mat.cum[,ncvind],ncol=length(ncvind))*matrix(incid.mat[,ncvind],ncol=length(ncvind))) != 0, arr.ind = TRUE)
-    # ncvind <- (incidind[, 1] - 1) * diag(over.mat)[1] +
-    #   (matrix(incid.mat.cum[,ncvind],ncol=length(ncvind))*matrix(incid.mat[,ncvind],ncol=length(ncvind)))[incidind]
-    # act.vec[ncvind] <- 1
-    for(l in c(2*ncvind-1,2*ncvind)){
+    # incidind <- which((matrix(incid.mat.cum[,lasind],ncol=length(lasind))*matrix(incid.mat[,lasind],ncol=length(lasind))) != 0, arr.ind = TRUE)
+    # lasind <- (incidind[, 1] - 1) * diag(over.mat)[1] +
+    #    (matrix(incid.mat.cum[,lasind],ncol=length(lasind))*matrix(incid.mat[,lasind],ncol=length(lasind)))[incidind]
+    # act.vec[lasind] <- 1
+    for(l in c(2*lasind-1,2*lasind)){
      act.vec[(K1[l]+1):K1[l+1]] <- 1
     }
-  } else if (warm.str == "NULL") {
+  }else if (warm.str == "NULL") {
     act.vec <- rep(1, ncol(X.latent))
   }
   start_val <- get_start(X.latent, y,family)
