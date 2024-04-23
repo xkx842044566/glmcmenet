@@ -21,7 +21,7 @@ cv.glmcmeOverlap <- function (xme, xcme, y, family = c("binomial", "poisson"), n
 
   act.vec <- rep(-1, ncol(X.latent))
   if (warm.str == "lasso") {
-    cvlas <- cv.glmnet(xmat, y,family = family,alpha=1,type.measure = "deviance")
+    cvlas <- cv.glmnet(xme, y,family = family,alpha=1,type.measure = "deviance")
     lasfit <- cvlas$glmnet.fit
     lasind <- which(lasfit$beta[, which(cvlas$lambda ==cvlas$lambda.min)] != 0)
     # incid.mat.cum <- t(apply(incid.mat,1,cumsum))
@@ -33,7 +33,7 @@ cv.glmcmeOverlap <- function (xme, xcme, y, family = c("binomial", "poisson"), n
      act.vec[(K1[l]+1):K1[l+1]] <- 1
     }
   } else if (warm.str == "adaptive_lasso") {
-    cv.ridge <- cv.glmnet(xmat,y, family=family, alpha=0)
+    cv.ridge <- cv.glmnet(xme,y, family=family, alpha=0)
     w3 <- 1/abs(matrix(coef(cv.ridge, s=cv.ridge$lambda.min)
                        [, 1][2:(ncol(xmat)+1)]))^1 ## Using gamma = 1
     w3[w3[,1] == Inf] <- 999999999
@@ -63,7 +63,7 @@ cv.glmcmeOverlap <- function (xme, xcme, y, family = c("binomial", "poisson"), n
     #                     tuneLength = 25,
     #                     trControl = control))
     #fitela <- glmnet(cbind(xme,xcme),y, family=family, alpha=cvela$bestTune$alpha,lambda = cvela$bestTune$lambda)#cv.elastic$finalModel
-    cv.ela <- cv.glmnet(xmat,y, family=family, alpha=0.25,type.measure="deviance")#cv.elastic$finalModel
+    cv.ela <- cv.glmnet(xme,y, family=family, alpha=0.25,type.measure="deviance")#cv.elastic$finalModel
     fitela <- cv.ela$glmnet.fit
     elaind <- which(fitela$beta[,which(cv.ela$lambda==cv.ela$lambda.min)]!=0) #fitela$beta@i+1
     # incid.mat.cum <- t(apply(incid.mat,1,cumsum))
@@ -74,7 +74,7 @@ cv.glmcmeOverlap <- function (xme, xcme, y, family = c("binomial", "poisson"), n
      act.vec[(K1[l]+1):K1[l+1]] <- 1
     }
   } else if (warm.str == "ncvreg") {
-    cvncv <- cv.ncvreg(xmat,y,family = family,penalty="MCP")
+    cvncv <- cv.ncvreg(xme,y,family = family,penalty="MCP")
     ncvfit <-cvncv$fit
     ncvind <- which(ncvfit$beta[,which(cvncv$lambda==cvncv$lambda.min)]!=0)[-1]-1
     # incid.mat.cum <- t(apply(incid.mat,1,cumsum))
