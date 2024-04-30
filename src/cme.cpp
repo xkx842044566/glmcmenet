@@ -702,6 +702,7 @@ bool coord_des_onerun(int pme, int nn, NumericVector& K1,
 
     //if (act_gr[g]){
     if (act[K1[g]]){
+      cur_beta = beta[K1[g]];
 
       //int K = K1[g+1] - K1[g];
       xwr = wcrossprod(X, resid, W, nn, K1[g]);
