@@ -34,7 +34,7 @@ get_start <- function(x, y, family, intercept) {
     g <- abs(drop(t(rv) %*% x))
   }
   g <- g * ju
-  lambda_max <- max(g) / max(1, 1e-3)
+  lambda_max <- max(g) / max(1, 1e-3) /nobs
 
   list(mu = mu, lambda_max = lambda_max) #nulldev = nulldev,
 }

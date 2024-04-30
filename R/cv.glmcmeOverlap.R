@@ -104,7 +104,7 @@ cv.glmcmeOverlap <- function (xme, xcme, y, family = c("binomial", "poisson"), n
   min.tau <- max.tau * tau.min.ratio
   min.gamma <- max(max(apply(X.latent,2,function(x){8*nrow(X.latent)/sum(x^2)}))+ 0.001,1/(0.125 - min.tau) + 0.001)
 
-  max.lambda <- 0.5*start_val$lambda_max
+  max.lambda <- start_val$lambda_max
   lambda.sib <- exp(seq(from = log(max.lambda), to = log(max.lambda *
                                                            lambda.min.ratio), length = nlambda.sib))
   lambda.cou <- exp(seq(from = log(max.lambda), to = log(max.lambda *

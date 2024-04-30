@@ -54,7 +54,7 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
     act.vec <- rep(1, ncol(xme) + ncol(xcme))
   }
   start_val <- get_start(cbind(xme, xcme), y,family)
-  max.lambda <- 0.5*start_val$lambda_max
+  max.lambda <- start_val$lambda_max
   lambda.sib <- exp(seq(from = log(max.lambda), to = log(max.lambda *
                                                            lambda.min.ratio), length = nlambda.sib))
   lambda.cou <- exp(seq(from = log(max.lambda), to = log(max.lambda *
