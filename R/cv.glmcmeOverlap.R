@@ -144,7 +144,7 @@ cv.glmcmeOverlap <- function (xme, xcme, y, family = c("gaussian","binomial", "p
     foldid <- double(n)
     foldid[y==1] <- sample(fold1)
     foldid[y==0] <- sample(fold0)
-  }else if (family=="poisson") {
+  }else {
     foldid <- sample(1:n %% nfolds)
     foldid[foldid==0] <- nfolds
   }
