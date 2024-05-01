@@ -2612,7 +2612,7 @@ List cme_gaussian(NumericMatrix& XX, NumericVector& yy,
 
     for (int a=0; a<niter_1; a++){ //iterate over siblings...
 
-      cout << "Tuning ... a = " << a << ", b = " << b << endl;//Update iteration variables
+      //cout << "Tuning ... a = " << a << ", b = " << b << endl;//Update iteration variables
       if (lambda_it){
         lambda[0] = lambda_sib_vec[a];
         lambda[1] = lambda_cou_vec[b];
@@ -2710,7 +2710,7 @@ List cme_gaussian(NumericMatrix& XX, NumericVector& yy,
           }
         }
 
-        cout << "warm act:" << num_act << endl;
+        //cout << "warm act:" << num_act << endl;
 
         //Update screen set
         if (lambda_it && screen_ind){
@@ -2745,7 +2745,7 @@ List cme_gaussian(NumericMatrix& XX, NumericVector& yy,
           }
         }
 
-        cout << "strong set:" << num_scr << endl;
+        //cout << "strong set:" << num_scr << endl;
 
 
         //Cycle on active set
@@ -2772,7 +2772,7 @@ List cme_gaussian(NumericMatrix& XX, NumericVector& yy,
           }
         }//end while
 
-        cout << "it_inner: " << it_inner << endl;
+        //cout << "it_inner: " << it_inner << endl;
 
         //Rcout << accumulate(act.begin(),act.end(),0) << endl;
         //Update active set
@@ -2791,7 +2791,7 @@ List cme_gaussian(NumericMatrix& XX, NumericVector& yy,
           }
         }
 
-        cout << "converge act set" << num_act << endl;
+        //cout << "converge act set" << num_act << endl;
 
       }
 
