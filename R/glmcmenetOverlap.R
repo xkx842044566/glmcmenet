@@ -2,7 +2,7 @@
 ## update (6/21/2016): adapt for cox model
 # ------------------------------------------------------------------------------
 glmcmenetOverlap <- function(xme, xcme, y,
-                             family=c("binomial", "poisson"),
+                             family=c("gaussian","binomial", "poisson"),
                              returnX.latent = FALSE, returnOverlap = FALSE,
                              lambda.sib = exp(seq(from = log(max.lambda),to = log(max.lambda * 1e-06), length = 10)),
                              lambda.cou = exp(seq(from = log(max.lambda),to = log(max.lambda * 1e-06), length = 10)),
