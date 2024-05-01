@@ -812,9 +812,9 @@ bool coord_des_onerun(int pme, int nn, NumericVector& K1,
 
         if (g % 2 == 0) {
           delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g] * offset_sib )) ;
-          //delta_cou[gind] = delta_cou[gind] ; //(exp(-(tau/lambda[1]) * offset_cou ))
+          delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g+1] * offset_cou ));
         } else {
-          //delta_sib[gind] = delta_sib[gind] ; //(exp(-(tau/lambda[0]) * offset_sib ))
+          delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g-1] * offset_sib ));
           delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g] * offset_cou )) ;
         }
 
@@ -880,9 +880,9 @@ bool coord_des_onerun(int pme, int nn, NumericVector& K1,
 
           if (g % 2 == 0) {
             delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g] * offset_sib )) ;
-            //delta_cou[gind] = delta_cou[gind] ; //(exp(-(tau/lambda[1]) * offset_cou ))
+            delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g+1] * offset_cou ));
           } else {
-            //delta_sib[gind] = delta_sib[gind] ; //(exp(-(tau/lambda[0]) * offset_sib ))
+            delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g-1] * offset_sib ));
             delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g] * offset_cou )) ;
           }
 
@@ -923,9 +923,9 @@ bool coord_des_onerun(int pme, int nn, NumericVector& K1,
               double offset_cou = mcp(beta[K1[g]],lambda[1],gamma)-mcp(cur_beta_me,lambda[1],gamma);
               if (g % 2 == 0) {
                 delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g] * offset_sib )) ;
-                //delta_cou[gind] = delta_cou[gind] ; //(exp(-(tau/lambda[1]) * offset_cou ))
+                delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g+1] * offset_cou ));
               } else {
-                //delta_sib[gind] = delta_sib[gind] ; //(exp(-(tau/lambda[0]) * offset_sib ))
+                delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g-1] * offset_sib ));
                 delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g] * offset_cou )) ;
               }
 
@@ -933,9 +933,9 @@ bool coord_des_onerun(int pme, int nn, NumericVector& K1,
               offset_cou = mcp(beta[j],lambda[1],gamma)-mcp(cur_beta_cme1,lambda[1],gamma);
               if (g % 2 == 0) {
                 delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g] * offset_sib )) ;
-                //delta_cou[gind] = delta_cou[gind] ; //(exp(-(tau/lambda[1]) * offset_cou ))
+                delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g+1] *offset_cou ));
               } else {
-                //delta_sib[gind] = delta_sib[gind] ; //(exp(-(tau/lambda[0]) * offset_sib ))
+                delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g-1] *offset_sib ));
                 delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g] * offset_cou )) ;
               }
 
@@ -943,9 +943,9 @@ bool coord_des_onerun(int pme, int nn, NumericVector& K1,
               offset_cou = mcp(beta[j+1],lambda[1],gamma)-mcp(cur_beta_cme2,lambda[1],gamma);
               if (g % 2 == 0) {
                 delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g] * offset_sib )) ;
-                //delta_cou[gind] = delta_cou[gind] ; //(exp(-(tau/lambda[1]) * offset_cou ))
+                delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g+1] * offset_cou ));
               } else {
-                //delta_sib[gind] = delta_sib[gind] ; //(exp(-(tau/lambda[0]) * offset_sib ))
+                delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g-1] * offset_sib ));
                 delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g] * offset_cou )) ;
               }
               //residuals shouldn't change
@@ -979,9 +979,9 @@ bool coord_des_onerun(int pme, int nn, NumericVector& K1,
               double offset_cou = mcp(beta[K1[g]],lambda[1],gamma)-mcp(cur_beta_me,lambda[1],gamma);
               if (g % 2 == 0) {
                 delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g] * offset_sib )) ;
-                //delta_cou[gind] = delta_cou[gind] ; //(exp(-(tau/lambda[1]) * offset_cou ))
+                delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g+1] * offset_cou ));
               } else {
-                //delta_sib[gind] = delta_sib[gind] ; //(exp(-(tau/lambda[0]) * offset_sib ))
+                delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g-1] * offset_sib ));
                 delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g] * offset_cou )) ;
               }
 
@@ -989,9 +989,9 @@ bool coord_des_onerun(int pme, int nn, NumericVector& K1,
               offset_cou = mcp(beta[j],lambda[1],gamma)-mcp(cur_beta_cme1,lambda[1],gamma);
               if (g % 2 == 0) {
                 delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g] * offset_sib )) ;
-                //delta_cou[gind] = delta_cou[gind] ; //(exp(-(tau/lambda[1]) * offset_cou ))
+                delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g+1] * offset_cou ));
               } else {
-                //delta_sib[gind] = delta_sib[gind] ; //(exp(-(tau/lambda[0]) * offset_sib ))
+                delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g-1] * offset_sib ));
                 delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g] * offset_cou )) ;
               }
 
@@ -999,9 +999,9 @@ bool coord_des_onerun(int pme, int nn, NumericVector& K1,
               offset_cou = mcp(beta[j-1],lambda[1],gamma)-mcp(cur_beta_cme2,lambda[1],gamma);
               if (g % 2 == 0) {
                 delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g] * offset_sib )) ;
-                //delta_cou[gind] = delta_cou[gind] ; //(exp(-(tau/lambda[1]) * offset_cou ))
+                delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g+1] * offset_cou ));
               } else {
-                //delta_sib[gind] = delta_sib[gind] ; //(exp(-(tau/lambda[0]) * offset_sib ))
+                delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g-1] * offset_sib ));
                 delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g] * offset_cou )) ;
               }
 
@@ -1081,9 +1081,9 @@ bool coord_des_onerun_gaussian(int pme, int nn, NumericVector& K1,
 
         if (g % 2 == 0) {
           delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g] * offset_sib )) ;
-          //delta_cou[gind] = delta_cou[gind] ; //(exp(-(tau/lambda[1]) * offset_cou ))
+          delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g+1] * offset_cou ));
         } else {
-          //delta_sib[gind] = delta_sib[gind] ; //(exp(-(tau/lambda[0]) * offset_sib ))
+          delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g-1] * offset_sib ));
           delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g] * offset_cou )) ;
         }
 
@@ -1135,9 +1135,9 @@ bool coord_des_onerun_gaussian(int pme, int nn, NumericVector& K1,
 
           if (g % 2 == 0) {
             delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g] * offset_sib )) ;
-            //delta_cou[gind] = delta_cou[gind] ; //(exp(-(tau/lambda[1]) * offset_cou ))
+            delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g+1]* offset_cou ));
           } else {
-            //delta_sib[gind] = delta_sib[gind] ; //(exp(-(tau/lambda[0]) * offset_sib ))
+            delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g-1] * offset_sib ));
             delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g] * offset_cou )) ;
           }
 
@@ -1178,9 +1178,9 @@ bool coord_des_onerun_gaussian(int pme, int nn, NumericVector& K1,
               double offset_cou = mcp(beta[K1[g]],lambda[1],gamma)-mcp(cur_beta_me,lambda[1],gamma);
               if (g % 2 == 0) {
                 delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g] * offset_sib )) ;
-                //delta_cou[gind] = delta_cou[gind] ; //(exp(-(tau/lambda[1]) * offset_cou ))
+                delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g+1] * offset_cou ));
               } else {
-                //delta_sib[gind] = delta_sib[gind] ; //(exp(-(tau/lambda[0]) * offset_sib ))
+                delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g-1] * offset_sib ));
                 delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g] * offset_cou )) ;
               }
 
@@ -1188,9 +1188,9 @@ bool coord_des_onerun_gaussian(int pme, int nn, NumericVector& K1,
               offset_cou = mcp(beta[j],lambda[1],gamma)-mcp(cur_beta_cme1,lambda[1],gamma);
               if (g % 2 == 0) {
                 delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g] * offset_sib )) ;
-                //delta_cou[gind] = delta_cou[gind] ; //(exp(-(tau/lambda[1]) * offset_cou ))
+                delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g+1] * offset_cou ));
               } else {
-                //delta_sib[gind] = delta_sib[gind] ; //(exp(-(tau/lambda[0]) * offset_sib ))
+                delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g-1] * offset_sib ));
                 delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g] * offset_cou )) ;
               }
 
@@ -1198,9 +1198,9 @@ bool coord_des_onerun_gaussian(int pme, int nn, NumericVector& K1,
               offset_cou = mcp(beta[j+1],lambda[1],gamma)-mcp(cur_beta_cme2,lambda[1],gamma);
               if (g % 2 == 0) {
                 delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g] * offset_sib )) ;
-                //delta_cou[gind] = delta_cou[gind] ; //(exp(-(tau/lambda[1]) * offset_cou ))
+                delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g+1] * offset_cou ));
               } else {
-                //delta_sib[gind] = delta_sib[gind] ; //(exp(-(tau/lambda[0]) * offset_sib ))
+                delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g-1] * offset_sib ));
                 delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g] * offset_cou )) ;
               }
               //residuals shouldn't change
@@ -1234,9 +1234,9 @@ bool coord_des_onerun_gaussian(int pme, int nn, NumericVector& K1,
               double offset_cou = mcp(beta[K1[g]],lambda[1],gamma)-mcp(cur_beta_me,lambda[1],gamma);
               if (g % 2 == 0) {
                 delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g] * offset_sib )) ;
-                //delta_cou[gind] = delta_cou[gind] ; //(exp(-(tau/lambda[1]) * offset_cou ))
+                delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g+1] * offset_cou ));
               } else {
-                //delta_sib[gind] = delta_sib[gind] ; //(exp(-(tau/lambda[0]) * offset_sib ))
+                delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g-1] * offset_sib ));
                 delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g] * offset_cou )) ;
               }
 
@@ -1244,9 +1244,9 @@ bool coord_des_onerun_gaussian(int pme, int nn, NumericVector& K1,
               offset_cou = mcp(beta[j],lambda[1],gamma)-mcp(cur_beta_cme1,lambda[1],gamma);
               if (g % 2 == 0) {
                 delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g] * offset_sib )) ;
-                //delta_cou[gind] = delta_cou[gind] ; //(exp(-(tau/lambda[1]) * offset_cou ))
+                delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g+1] * offset_cou ));
               } else {
-                //delta_sib[gind] = delta_sib[gind] ; //(exp(-(tau/lambda[0]) * offset_sib ))
+                delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g-1] * offset_sib ));
                 delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g] * offset_cou )) ;
               }
 
@@ -1254,9 +1254,9 @@ bool coord_des_onerun_gaussian(int pme, int nn, NumericVector& K1,
               offset_cou = mcp(beta[j-1],lambda[1],gamma)-mcp(cur_beta_cme2,lambda[1],gamma);
               if (g % 2 == 0) {
                 delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g] * offset_sib )) ;
-                //delta_cou[gind] = delta_cou[gind] ; //(exp(-(tau/lambda[1]) * offset_cou ))
+                delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g+1] * offset_cou ));
               } else {
-                //delta_sib[gind] = delta_sib[gind] ; //(exp(-(tau/lambda[0]) * offset_sib ))
+                delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g-1] * offset_sib ));
                 delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g] * offset_cou )) ;
               }
 
@@ -2248,9 +2248,9 @@ List cme_wls(NumericMatrix& XX, NumericVector& yy, CharacterVector& family,
           int gind = floor((double)g/2.0); //index for sibling group
           if (g % 2 == 0) {
             delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g] * mcp(beta[j],lambda[0],gamma) )) ;
-            //delta_cou[gind] = delta_cou[gind]; //(exp(-(tau/lambda[1]) * mcp(beta[j],lambda[1],gamma) )) *
+            delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g+1] * mcp(beta[j],lambda[1],gamma) ));
           } else {
-            //delta_sib[gind] = delta_sib[gind]; //(exp(-(tau/lambda[0]) * mcp(beta[j],lambda[0],gamma) )) *
+            delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g-1] * mcp(beta[j],lambda[0],gamma) ));
             delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g] * mcp(beta[j],lambda[1],gamma) )) ;
           }
         }
@@ -2669,9 +2669,9 @@ List cme_gaussian(NumericMatrix& XX, NumericVector& yy,
           int gind = floor((double)g/2.0); //index for sibling group
           if (g % 2 == 0) {
             delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g] * mcp(beta[j],lambda[0],gamma) )) ;
-            //delta_cou[gind] = delta_cou[gind]; //(exp(-(tau/lambda[1]) * mcp(beta[j],lambda[1],gamma) )) *
+            delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g+1] * mcp(beta[j],lambda[1],gamma) )) ;
           } else {
-            //delta_sib[gind] = delta_sib[gind]; //(exp(-(tau/lambda[0]) * mcp(beta[j],lambda[0],gamma) )) *
+            delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g-1] * mcp(beta[j],lambda[0],gamma) )) ;
             delta_cou[gind] = delta_cou[gind] * (exp(-(tau/lambda[1]) * mg[g] * mcp(beta[j],lambda[1],gamma) )) ;
           }
         }
