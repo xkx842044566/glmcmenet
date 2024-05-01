@@ -49,9 +49,15 @@ glmcmenetOverlap <- function(xme, xcme, y,
   X.latent[, idx.const] <- 0
   X.sl[idx.const] <- 1
 
-  ret <- cme(X.sc, y, family, K1, lambda.sib, lambda.cou, gamma,
+  if(family=="gaussian"){
+    ret <- cme_gaussian(X.sc, y, K1, lambda.sib, lambda.cou, gamma,
+                        tau, X.sl, beta0, act.vec, penalty.factor, max.lambda, it.max,
+                        it_warm=3, reset=1, screen_ind)
+  } else {
+    ret <- cme_wls(X.sc, y, family, K1, lambda.sib, lambda.cou, gamma,
              tau, X.sl, beta0, act.vec, penalty.factor, max.lambda, it.max,
              it_warm=3, reset=1, screen_ind)
+  }
 
   ##convert latent beta coefficients (gamma's) to non-latent beta's
   ret$beta <- array(0, dim=c(ncol(xme)+ncol(xcme),dim(ret$coefficients)[2:3]))

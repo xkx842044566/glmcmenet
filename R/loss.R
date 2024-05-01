@@ -6,7 +6,9 @@ loss <- function(fitobj,y,yhat,family,type.measure=c("deviance","class","adaptiv
   }
   if(type.measure=="deviance"){
       val <- array(NA, dim = dim(yhat))
-    if (family=="binomial") {
+      if (family=="gaussian") {
+        val <- (y-yhat)^2
+      } else if (family=="binomial") {
       val <- -2*(y*log(yhat)+(1-y)*log(1-yhat))
      }  else if (family=="poisson") {
       yly <- y*log(y)
@@ -18,7 +20,10 @@ loss <- function(fitobj,y,yhat,family,type.measure=c("deviance","class","adaptiv
     if (family=="binomial") {val <- (yhat < 0.5) == y} else NULL
   }else if(type.measure=="adaptive_dev"){
     val <- array(NA, dim = dim(yhat))
-    if (family=="binomial") {
+    if (family=="gaussian") {
+      val <- (y-yhat)^2+
+        aperm(array(rep(log(selmat), times=dim(yhat)[1]), dim(yhat)[c(2,3,1)]),c(3,1,2))
+    } else if (family=="binomial") {
       val <- -2*(y*log(yhat)+(1-y)*log(1-yhat))+
         aperm(array(rep(log(selmat), times=dim(yhat)[1]), dim(yhat)[c(2,3,1)]),c(3,1,2))
     }  else if (family=="poisson") {

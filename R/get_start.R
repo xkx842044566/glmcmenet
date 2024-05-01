@@ -16,7 +16,11 @@ get_start <- function(x, y, family, intercept) {
 
   # compute lambda max
   # Adjust calculations based on family
-  if (family == "binomial") {
+  if (family=="gaussian"){
+    eta <- mu
+    v <- 1
+    m.e <- 1
+  } else if (family == "binomial") {
     eta <- log(mu / (1 - mu)) # logit link for binomial
     v <- mu * (1 - mu) # binomial variance
     m.e <- mu * (1 - mu) # derivative of mu w.r.t. eta for binomial with logit link

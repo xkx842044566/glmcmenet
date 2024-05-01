@@ -1,5 +1,7 @@
 pfamily <- function (eta,family){
-    if(family=="binomial"){
+  if(family=="gaussian"){
+    return(eta);
+  }else if(family=="binomial"){
       if (eta > 16) {
         return(0.9999);
       } else if (eta < -16) {
