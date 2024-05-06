@@ -164,7 +164,7 @@ cv.glmcmeOverlap <- function (xme, xcme, y, family = c("gaussian","binomial", "p
                         it.max = it.max.cv, screen_ind=F,str=F)
     xtest <- xmat[which, , drop = F]
     yhat <- predictcmeOverlap(fitobj, xtest, type="response")
-    predmat[which, , ] <- loss(fitobj,y[which],yhat,family=family,type.measure=type.measure)
+    predmat[which, , ] <- loss(fitobj,y[which],yhat,n,family=family,type.measure=type.measure)
 
   }
   cat("\n")
@@ -201,7 +201,7 @@ cv.glmcmeOverlap <- function (xme, xcme, y, family = c("gaussian","binomial", "p
                         it.max = it.max.cv, screen_ind=screen_ind,str=F)
     xtest <- xmat[which, , drop = F]
     yhat <- predictcmeOverlap(fitobj, xtest, type="response")
-    predmat[which, , ] <- loss(fitobj,y[which],yhat,family=family,type.measure=type.measure)
+    predmat[which, , ] <- loss(fitobj,y[which],yhat,n,family=family,type.measure=type.measure)
   }
   cat("\n")
   cvm.lambda <- apply(predmat, c(2, 3), mean)
