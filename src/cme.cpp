@@ -75,6 +75,15 @@ double fmax2 (double x, double y){
   return (ret);
 }
 
+// Max of x
+double max(vector<double>& x, int n) {
+  double val = x[0];
+  for (int i=1; i<n; i++) {
+    if (x[i] > val) val = x[i];
+  }
+  return(val);
+}
+
 // Pr(y=1) for binomial
 double pbinomial(double eta) {
   if (eta > 16) {
@@ -733,7 +742,7 @@ bool coord_des_onerun(int pme, int nn, NumericVector& K1,
   double xwr = 0.0;
   double xwx = 0.0;
   double inprod = 0.0;
-  double v = 0.25;
+  double v = 0.0;
   double mu = 0.0;
   int J = K1.size() - 1;
 
@@ -742,22 +751,43 @@ bool coord_des_onerun(int pme, int nn, NumericVector& K1,
   // Extract the family type from CharacterVector
   string familyType = Rcpp::as<string>(family[0]);
 
-  cur_inter= inter;
+
+  if (familyType == "binomial") {
+    v = 0.25;
+    for (int i=0; i<nn; i++) {
+      mu = pbinomial(eta[i]);
+      W[i] = fmax2(mu*(1-mu), 0.0001);
+      resid[i] = (yy[i] - mu)/W[i];
+      if (yy[i]==1) dev = dev - log(mu);
+      if (yy[i]==0) dev = dev - log(1-mu);
+    }
+  } else if (familyType == "poisson") {
+    v = exp(max(eta, nn));
+    for (int i=0; i<nn; i++) {
+      mu = exp(eta[i]);
+      W[i] = mu;
+      resid[i] = (yy[i] - mu)/W[i];
+      if (yy[i]!=0) dev += yy[i]*log(yy[i]/mu);
+    }
+  }
+
 
   //Update intercept
+  cur_inter= inter;
+
   xwr = crossprod(W, resid, nn, 0);
   xwx = sum(W,nn);
   inter = xwr/xwx + cur_inter;
   for (int i=0; i<nn; i++) {
     resid[i] -= inter - cur_inter;
     eta[i] += inter - cur_inter;
-    if (familyType == "binomial"){
-      mu = pbinomial(eta[i]) ;
-      W[i] = fmax2(mu*(1-mu),0.0001);
-    }else if(familyType == "poisson"){
-      mu = ppoisson(eta[i]) ;
-      W[i] = fmax2(mu,0.0001);
-    }
+    // if (familyType == "binomial"){
+    //   mu = pbinomial(eta[i]) ;
+    //   W[i] = fmax2(mu*(1-mu),0.0001);
+    // }else if(familyType == "poisson"){
+    //   mu = exp(eta[i]) ;
+    //   W[i] = mu;
+    // }
   }
 
   for (int g=0; g<J; g++) {
@@ -794,13 +824,13 @@ bool coord_des_onerun(int pme, int nn, NumericVector& K1,
         for (int k=0;k<nn;k++){
           resid[k] -= X[K1[g]*nn+k]*(beta[K1[g]]-cur_beta);
           eta[k] += X[K1[g]*nn+k]*(beta[K1[g]]-cur_beta);
-          if (familyType == "binomial"){
-            mu = pbinomial(eta[k]) ;
-            W[k] = fmax2(mu*(1-mu),0.0001);
-          }else if(familyType == "poisson"){
-            mu = ppoisson(eta[k]) ;
-            W[k] = fmax2(mu,0.0001);
-          }
+          // if (familyType == "binomial"){
+          //   mu = pbinomial(eta[k]) ;
+          //   W[k] = fmax2(mu*(1-mu),0.0001);
+          // }else if(familyType == "poisson"){
+          //   mu = exp(eta[k]) ;
+          //   W[k] = mu;
+          // }
           //v += (X_me[j*nn+k]*W[k]*X_me[j*nn+k])/((double)nn);
         }
         // xwx = wsqsum(X_me, W, nn, j);
@@ -862,13 +892,13 @@ bool coord_des_onerun(int pme, int nn, NumericVector& K1,
           for (int k=0;k<nn;k++){
             resid[k] -= X[j*nn+k]*(beta[j]-cur_beta);
             eta[k] += X[j*nn+k]*(beta[j]-cur_beta);
-            if (familyType == "binomial"){
-              mu = pbinomial(eta[k]) ;
-              W[k] = fmax2(mu*(1-mu),0.0001);
-            }else if(familyType == "poisson"){
-              mu = ppoisson(eta[k]) ;
-              W[k] = fmax2(mu,0.0001);
-            }
+            // if (familyType == "binomial"){
+            //   mu = pbinomial(eta[k]) ;
+            //   W[k] = fmax2(mu*(1-mu),0.0001);
+            // }else if(familyType == "poisson"){
+            //   mu = exp(eta[k]) ;
+            //   W[k] = mu;
+            // }
             //v += (X_me[j*nn+k]*W[k]*X_me[j*nn+k])/((double)nn);
           }
           // xwx = wsqsum(X_me, W, nn, j);
@@ -1944,11 +1974,11 @@ List cme_str(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Cha
 
 // [[Rcpp::export]]
 List cme_wls(NumericMatrix& XX, NumericVector& yy, CharacterVector& family,
-         NumericVector& K1,
-         NumericVector& lambda_sib_vec, NumericVector& lambda_cou_vec,
-         NumericVector& gamma_vec, NumericVector& tau_vec,
-         NumericVector& XX_sl, NumericVector& beta_vec, NumericVector& act_vec, NumericVector& multiplier,
-         double lambda_max, int it_max, int it_warm, int reset, bool screen_ind) {
+             NumericVector& K1,
+             NumericVector& lambda_sib_vec, NumericVector& lambda_cou_vec,
+             NumericVector& gamma_vec, NumericVector& tau_vec,
+             NumericVector& XX_sl, NumericVector& beta_vec, NumericVector& act_vec, NumericVector& multiplier,
+             double lambda_max, int it_max, int it_warm, int reset, bool screen_ind) {
   // // [[Rcpp::plugins(openmp)]]
   //------------------------------------------------------------
   // XX - Full model matrix including both ME and CME effects (assume normalized)
@@ -1971,7 +2001,7 @@ List cme_wls(NumericMatrix& XX, NumericVector& yy, CharacterVector& family,
   int it_max_reset = it_max / reset;
   bool cont = true;
   bool chng_flag = false;
-  double v = 0.25;
+  //double v = 0;
   double mu = 0;
   int J = K1.size() - 1;
   int pme = J/2; //# of MEs
@@ -1987,14 +2017,6 @@ List cme_wls(NumericMatrix& XX, NumericVector& yy, CharacterVector& family,
       X[i*nn+j] = XX(j,i);
     }
   }
-  // for (int i=0;i<pcme;i++){
-  //   for (int j=0;j<nn;j++){
-  //     X_cme[i*nn+j] = XX_cme(j,i);
-  //   }
-  // }
-  // store colnames name of ME and CME
-  // CharacterVector names_me = colnames(XX_me);
-  // CharacterVector names_cme = colnames(XX_cme);
 
   //Check whether lambda is to be iterated or not
   bool lambda_it;
@@ -2028,47 +2050,14 @@ List cme_wls(NumericMatrix& XX, NumericVector& yy, CharacterVector& family,
   for (int i=0;i<pp;i++){
     beta[i] = beta_vec[i];
   }
-  // vector<double> beta_cme(pcme,0.0); //for CMEs
-  // for (int i=0;i<pcme;i++){
-  //   beta_cme[i] = beta_vec[pme+i];
-  // }
-  //double cur_beta = 0.0; //running beta
-
-  //Containers for siblings or cousion family
-  //vector<int> sibind(2*(pme-1),0);
-  //vector<int> couind(2*(pme-1),0);
 
   //Set all factors as active to begin
   vector<bool> act(pp,true); //Current active set
   //vector<bool> act_cme(pcme,true);
   vector<bool> scr(pp,true); //Screened active set
   //vector<bool> scr_cme(pcme,true);
-  bool kkt_bool;
+  //bool kkt_bool;
 
-  //set<string> uniqueEffects;
-
-  // Include main effects
-  //for (int i = 0; i < pme; i++) {
-  //  uniqueEffects.insert(Rcpp::as<string>(names_me[i]));
-  //}
-
-  //// Include parent and child effects from conditional main effects
-  //for (int i = 0; i < pcme; i++) {
-  //  auto parts = splitString(Rcpp::as<string>(names_cme[i]));
-  //  for (const auto& part : parts) {
-  //    uniqueEffects.insert(part);
-  //  }
-  //}
-
-  //unordered_map<string, int> effectIndexMap;
-  //int index = 0;
-  //for (const auto& effect : uniqueEffects) {
-  //  effectIndexMap[effect] = index++;
-  //}
-
-  //// Containers for linearized slopes Delta
-  //vector<double> delta_sib(uniqueEffects.size(), 0.0); // Linearized penalty for siblings (sib(A), sib(B), ...)
-  //vector<double> delta_cou(uniqueEffects.size(), 0.0); // Linearized penalty for cousins (cou(A), cou(B), ...)
   vector<double> mg(J,1);
   //vector<double> m_cme(pcme,1);
   for (int i=0;i<J;i++){
@@ -2102,11 +2091,11 @@ List cme_wls(NumericMatrix& XX, NumericVector& yy, CharacterVector& family,
   double nullDev = 0.0;
   double dev = 0.0;
   double inter= 0.0; //for intercept
-  double inprod = 0.0; //inner product
+  //double inprod = 0.0; //inner product
   double cj = 0.0;
   double vj = 0.0;
   double thresh = 0.0; //threshold for screening
-  int size = 0;
+  //int size = 0;
   int num_act = 0;
   int num_scr = 0;
 
@@ -2118,7 +2107,7 @@ List cme_wls(NumericMatrix& XX, NumericVector& yy, CharacterVector& family,
     inter = log(ymean/(1-ymean));
     for (int i=0; i<nn; i++) {
       eta[i] = log(ymean/(1-ymean)); //
-      mu = pbinomial(eta[i]) ;
+      mu = ymean ;
       W[i] = fmax2(mu*(1-mu),0.0001);
       resid[i] = (yy[i]-mu)/W[i];
       nullDev -= 2*yy[i]*log(ymean) + 2*(1-yy[i])*log(1-ymean);
@@ -2128,8 +2117,8 @@ List cme_wls(NumericMatrix& XX, NumericVector& yy, CharacterVector& family,
     inter = log(ymean);
     for (int i=0;i<nn;i++) {
       eta[i] = log(ymean);
-      mu = ppoisson(eta[i]) ;
-      W[i] = fmax2(mu,0.0001);
+      mu = ymean ;
+      W[i] = mu;
       resid[i] = (yy[i]-mu)/W[i];
       if (yy[i]!=0) nullDev += 2*(yy[i]*log(yy[i]/ymean) + ymean - yy[i]);
       else nullDev += 2*ymean;
@@ -2152,8 +2141,6 @@ List cme_wls(NumericMatrix& XX, NumericVector& yy, CharacterVector& family,
         lambda[1] = lambda_cou_vec[b];
       }
       else{
-        // gamma = gamma_vec[a]; //ch
-        // tau = tau_vec[b];
         tau = tau_vec[a];
         gamma = gamma_vec[b];
       }
@@ -2164,14 +2151,12 @@ List cme_wls(NumericMatrix& XX, NumericVector& yy, CharacterVector& family,
         for (int i=0;i<pp;i++){//reset beta
           beta[i] = 0.0;
         }
-        // for (int i=0;i<pcme;i++){
-        //   beta_cme[i] = 0.0;
-        // }
+
         if (familyType == "binomial") {
           inter = log(ymean/(1-ymean));
           for (int i=0; i<nn; i++) {
             eta[i] = log(ymean/(1-ymean)); //
-            mu = pbinomial(eta[i]) ;
+            mu = ymean ;
             W[i] = fmax2(mu*(1-mu),0.0001);
             resid[i] = (yy[i]-mu)/W[i];
             dev -= 2*yy[i]*log(ymean) + 2*(1-yy[i])*log(1-ymean);
@@ -2180,8 +2165,8 @@ List cme_wls(NumericMatrix& XX, NumericVector& yy, CharacterVector& family,
           inter = log(ymean);
           for (int i=0;i<nn;i++) {
             eta[i] = log(ymean);
-            mu = ppoisson(eta[i]) ;
-            W[i] = fmax2(mu,0.0001);
+            mu = ymean ;
+            W[i] = mu;
             resid[i] = (yy[i]-mu)/W[i];
             if (yy[i]!=0) dev += 2*(yy[i]*log(yy[i]/ymean) + ymean - yy[i]);
             else dev += 2*ymean;
@@ -2211,14 +2196,12 @@ List cme_wls(NumericMatrix& XX, NumericVector& yy, CharacterVector& family,
       for (int i=0;i<pp;i++){//reset beta
         beta[i] = 0.0;
       }
-      // for (int i=0;i<pcme;i++){
-      //   beta_cme[i] = 0.0;
-      // }
+
       if (familyType == "binomial") {
         inter = log(ymean/(1-ymean));
         for (int i=0; i<nn; i++) {
           eta[i] = log(ymean/(1-ymean)); //
-          mu = pbinomial(eta[i]) ;
+          mu = ymean ;
           W[i] = fmax2(mu*(1-mu),0.0001);
           resid[i] = (yy[i]-mu)/W[i];
           dev -= 2*yy[i]*log(ymean) + 2*(1-yy[i])*log(1-ymean);
@@ -2227,8 +2210,8 @@ List cme_wls(NumericMatrix& XX, NumericVector& yy, CharacterVector& family,
         inter = log(ymean);
         for (int i=0;i<nn;i++) {
           eta[i] = log(ymean);
-          mu = ppoisson(eta[i]) ;
-          W[i] = fmax2(mu,0.0001);
+          mu = ymean ;
+          W[i] = mu;
           resid[i] = (yy[i]-mu)/W[i];
           if (yy[i]!=0) dev += 2*(yy[i]*log(yy[i]/ymean) + ymean - yy[i]);
           else dev += 2*ymean;
@@ -2240,11 +2223,7 @@ List cme_wls(NumericMatrix& XX, NumericVector& yy, CharacterVector& family,
       fill(delta_cou.begin(),delta_cou.end(),lambda[1]); //assigns each element the value lambda[1]
       for (int g=0; g<J; g++) {
         for (int j=K1[g];j<K1[g+1];j++){
-          // v = wsqsum(X_me, W, nn, j)/((double)nn);
-          // string me = Rcpp::as<string>(names_me[j]);
-          // int delta_ind = findind(effectIndexMap,me);
-          //delta_sib[j] = delta_sib[j] * ( exp( -(tau/lambda[0]) * m_me[j] * mcp(beta_me[j],lambda[0],gamma) ) );
-          //delta_cou[j] = delta_cou[j] * ( exp( -(tau/lambda[1]) * m_me[j] * mcp(beta_me[j],lambda[1],gamma) ) );
+
           int gind = floor((double)g/2.0); //index for sibling group
           if (g % 2 == 0) {
             delta_sib[gind] = delta_sib[gind] * (exp(-(tau/lambda[0]) * mg[g] * mcp(beta[j],lambda[0],gamma) )) ;
@@ -2263,10 +2242,10 @@ List cme_wls(NumericMatrix& XX, NumericVector& yy, CharacterVector& family,
         for (int m=0; m<it_warm; m++){
           if (lambda_it && screen_ind && a>0 && b>0){
             chng_flag = coord_des_onerun(pme, nn, K1, lambda, cur_delta, chng_flag, tau, gamma, X, yy,
-                                         family, delta_sib, delta_cou, scr, inter, beta, mg, eta, resid, W, dev);
+                                                 family, delta_sib, delta_cou, scr, inter, beta, mg, eta, resid, W, dev);
           } else{
             chng_flag = coord_des_onerun(pme, nn, K1, lambda, cur_delta, chng_flag, tau, gamma, X, yy,
-                                         family, delta_sib, delta_cou, act, inter, beta, mg, eta, resid, W, dev);
+                                                 family, delta_sib, delta_cou, act, inter, beta, mg, eta, resid, W, dev);
           }
 
         }
@@ -2336,10 +2315,10 @@ List cme_wls(NumericMatrix& XX, NumericVector& yy, CharacterVector& family,
           it_inner ++;
           if (lambda_it && screen_ind && a>0 && b>0){
             chng_flag = coord_des_onerun(pme, nn, K1, lambda, cur_delta, chng_flag, tau, gamma, X, yy,
-                                         family, delta_sib, delta_cou, scr, inter, beta, mg, eta, resid, W, dev);
+                                                 family, delta_sib, delta_cou, scr, inter, beta, mg, eta, resid, W, dev);
           } else {
             chng_flag = coord_des_onerun(pme, nn, K1, lambda, cur_delta, chng_flag, tau, gamma, X, yy,
-                                         family, delta_sib, delta_cou, act, inter, beta, mg, eta, resid, W, dev);
+                                                 family, delta_sib, delta_cou, act, inter, beta, mg, eta, resid, W, dev);
           }
 
           //Update cont flag for termination
@@ -2411,13 +2390,6 @@ List cme_wls(NumericMatrix& XX, NumericVector& yy, CharacterVector& family,
           scr_mat(k,a) = act[k];
         }
       }
-      // for (int k=0;k<pcme;k++){
-      //   if (lambda_it && screen_ind && a>0 && b>0){
-      //     scr_mat(pme+k,a) = scr_cme[k];
-      //   } else {
-      //     scr_mat(pme+k,a) = act_cme[k];
-      //   }
-      // }
 
     }//end nlambda.sib (a)
 
@@ -2505,14 +2477,6 @@ List cme_gaussian(NumericMatrix& XX, NumericVector& yy,
       X[i*nn+j] = XX(j,i);
     }
   }
-  // for (int i=0;i<pcme;i++){
-  //   for (int j=0;j<nn;j++){
-  //     X_cme[i*nn+j] = XX_cme(j,i);
-  //   }
-  // }
-  // store colnames name of ME and CME
-  // CharacterVector names_me = colnames(XX_me);
-  // CharacterVector names_cme = colnames(XX_cme);
 
   //Check whether lambda is to be iterated or not
   bool lambda_it;
