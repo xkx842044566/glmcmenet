@@ -2912,7 +2912,7 @@ List cme_gaussian(NumericMatrix& XX, NumericVector& yy,
         // beta_cube(k,a,b) = beta_cube(k,a,b);
         beta_cube(k,a,b) = beta_cube(k,a,b)/XX_sl(k);
         for (int j = 0; j < nn; j++) {
-          product[j] = X[k * nn + j] * beta_cube.slice(a).col(b)[k];
+          product[j] = X[k * nn + j] * beta_cube.slice(b).col(a)[k];
         }
       }
       for (int j = 0; j < nn; j++) {
