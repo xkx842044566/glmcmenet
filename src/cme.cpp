@@ -2604,7 +2604,6 @@ List cme_gaussian(NumericMatrix& XX, NumericVector& yy,
   double inter= 0.0; //for intercept
   double inprod = 0.0; //inner product
   double cj = 0.0;
-  double vj = 0.0;
   double thresh = 0.0; //threshold for screening
   int size = 0;
   int num_act = 0;
@@ -2750,15 +2749,15 @@ List cme_gaussian(NumericMatrix& XX, NumericVector& yy,
                     int gind = floor((double)g/2.0);
 
                     if (g % 2 == 0) { //sibling group
-                      thresh = max(delta_sib[gind]*mg[g]+delta_cou[gind]*mg[g+1]+vj*gamma/(vj*gamma-delta_sib[gind]*mg[g]/lambda[0]-delta_cou[gind]*mg[g+1]/lambda[1])*(lambda[1]-lambda_cou_vec[b-1]),
-                                   delta_sib[gind]*mg[g]+delta_cou[gind]*mg[g+1]+vj*gamma/(vj*gamma-delta_sib[gind]*mg[g]/lambda[0]-delta_cou[gind]*mg[g+1]/lambda[1])*(lambda[0]-lambda_sib_vec[a-1]));
+                      thresh = max(delta_sib[gind]*mg[g]+delta_cou[gind]*mg[g+1]+gamma/(gamma-delta_sib[gind]*mg[g]/lambda[0]-delta_cou[gind]*mg[g+1]/lambda[1])*(lambda[1]-lambda_cou_vec[b-1]),
+                                   delta_sib[gind]*mg[g]+delta_cou[gind]*mg[g+1]+gamma/(gamma-delta_sib[gind]*mg[g]/lambda[0]-delta_cou[gind]*mg[g+1]/lambda[1])*(lambda[0]-lambda_sib_vec[a-1]));
                       if (abs(cj) < thresh) {
                         scr[K1[g]] = false;
                         num_scr --;
                       }
                     } else {
-                      thresh = max(delta_sib[gind]*mg[g-1]+delta_cou[gind]*mg[g]+vj*gamma/(vj*gamma-delta_sib[gind]*mg[g-1]/lambda[0]-delta_cou[gind]*mg[g]/lambda[1])*(lambda[1]-lambda_cou_vec[b-1]),
-                                   delta_sib[gind]*mg[g-1]+delta_cou[gind]*mg[g]+vj*gamma/(vj*gamma-delta_sib[gind]*mg[g-1]/lambda[0]-delta_cou[gind]*mg[g]/lambda[1])*(lambda[0]-lambda_sib_vec[a-1]));
+                      thresh = max(delta_sib[gind]*mg[g-1]+delta_cou[gind]*mg[g]+gamma/(gamma-delta_sib[gind]*mg[g-1]/lambda[0]-delta_cou[gind]*mg[g]/lambda[1])*(lambda[1]-lambda_cou_vec[b-1]),
+                                   delta_sib[gind]*mg[g-1]+delta_cou[gind]*mg[g]+gamma/(gamma-delta_sib[gind]*mg[g-1]/lambda[0]-delta_cou[gind]*mg[g]/lambda[1])*(lambda[0]-lambda_sib_vec[a-1]));
                       if (abs(cj) < thresh) {
                         scr[K1[g]] = false;
                         num_scr --;
@@ -2780,15 +2779,15 @@ List cme_gaussian(NumericMatrix& XX, NumericVector& yy,
                       }
 
                       if (g % 2 == 0) { //sibling group
-                        thresh = max(delta_sib[gind]*mg[g]+delta_cou[condind]*mg[g+1]+vj*gamma/(vj*gamma-delta_sib[gind]*mg[g]/lambda[0]-delta_cou[condind]*mg[g+1]/lambda[1])*(lambda[1]-lambda_cou_vec[b-1]),
-                                     delta_sib[gind]*mg[g]+delta_cou[condind]*mg[g+1]+vj*gamma/(vj*gamma-delta_sib[gind]*mg[g]/lambda[0]-delta_cou[condind]*mg[g+1]/lambda[1])*(lambda[0]-lambda_sib_vec[a-1]));
+                        thresh = max(delta_sib[gind]*mg[g]+delta_cou[condind]*mg[g+1]+gamma/(gamma-delta_sib[gind]*mg[g]/lambda[0]-delta_cou[condind]*mg[g+1]/lambda[1])*(lambda[1]-lambda_cou_vec[b-1]),
+                                     delta_sib[gind]*mg[g]+delta_cou[condind]*mg[g+1]+gamma/(gamma-delta_sib[gind]*mg[g]/lambda[0]-delta_cou[condind]*mg[g+1]/lambda[1])*(lambda[0]-lambda_sib_vec[a-1]));
                         if (abs(cj) < thresh || !scr[K1[g]]) {
                           scr[j] = false;
                           num_scr --;
                         }
                       } else {
-                        thresh = max(delta_sib[condind]*mg[g-1]+delta_cou[gind]*mg[g]+vj*gamma/(vj*gamma-delta_sib[condind]*mg[g-1]/lambda[0]-delta_cou[gind]*mg[g]/lambda[1])*(lambda[1]-lambda_cou_vec[b-1]),
-                                     delta_sib[condind]*mg[g-1]+delta_cou[gind]*mg[g]+vj*gamma/(vj*gamma-delta_sib[condind]*mg[g-1]/lambda[0]-delta_cou[gind]*mg[g]/lambda[1])*(lambda[0]-lambda_sib_vec[a-1]));
+                        thresh = max(delta_sib[condind]*mg[g-1]+delta_cou[gind]*mg[g]+gamma/(gamma-delta_sib[condind]*mg[g-1]/lambda[0]-delta_cou[gind]*mg[g]/lambda[1])*(lambda[1]-lambda_cou_vec[b-1]),
+                                     delta_sib[condind]*mg[g-1]+delta_cou[gind]*mg[g]+gamma/(gamma-delta_sib[condind]*mg[g-1]/lambda[0]-delta_cou[gind]*mg[g]/lambda[1])*(lambda[0]-lambda_sib_vec[a-1]));
                         if (abs(cj) < thresh || !scr[K1[g]]) {
                           scr[j] = false;
                           num_scr --;
