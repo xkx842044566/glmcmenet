@@ -51,7 +51,7 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
     ncvind <- which(ncvfit$beta[,which(cvncv$lambda==cvncv$lambda.min)]!=0)[-1]-1
     act.vec[ncvind] <- 1
   } else if (warm.str == "NULL") {
-    act.vec <- rep(1, ncol(xme) + ncol(xcme))
+    act.vec <- rep(-1, ncol(xme) + ncol(xcme))
   }
   start_val <- get_start(cbind(xme, xcme), y,family)
   max.lambda <- start_val$lambda_max
