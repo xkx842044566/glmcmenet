@@ -2,7 +2,8 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
           nlambda.cou = 20, lambda.min.ratio = 1e-06, ngamma = 20,
           max.gamma = 150, ntau = 20, max.tau = 0.2, tau.min.ratio = 0.001,
           it.max = 250, it.max.cv = 25, type.measure=c("deviance","class","adaptive_dev"),
-          warm.str = c("lasso","adaptive_lasso","elastic","ncvreg","NULL"),penalty.factor=rep(1,ncol(xme) + ncol(xcme)),
+          warm.str = c("lasso","adaptive_lasso","elastic","ncvreg","NULL"),
+          penalty.factor=rep(1,ncol(xme) + ncol(xcme)), group.penalty=rep(1,2*ncol(xme)),
           screen_ind=F,str=F)
 {
   pme <- ncol(xme)
@@ -110,8 +111,8 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
     which = (foldid == i)
     fitobj <- glmcmenet(xme = xme[!which, , drop = F], xcme = xcme[!which,, drop = F], y = y[!which],  family=family,
                      lambda.sib = parms1.min[1],lambda.cou = parms1.min[2], gamma = gamma_vec,
-                     tau = tau_vec, act.vec = act.vec, penalty.factor=penalty.factor, max.lambda = max.lambda,
-                     it.max = it.max.cv, screen_ind=F,str=str)
+                     tau = tau_vec, act.vec = act.vec, penalty.factor=penalty.factor, group.penalty=group.penalty,
+                     max.lambda = max.lambda, it.max = it.max.cv, screen_ind=F,str=str)
     xtest <- xmat[which, , drop = F]
     yhat <- predictcme(fitobj, xtest, type="response")
     predmat[which, , ] <- loss(fitobj,y[which],yhat,family=family,type.measure=type.measure)
@@ -147,8 +148,8 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
     fitobj <- glmcmenet(xme = xme[!which, , drop = F], xcme = xcme[!which,
                                                                 , drop = F], y = y[!which], family=family,
                      lambda.sib = lambda.sib,lambda.cou = lambda.cou, gamma = parms2.min[1],
-                     tau = parms2.min[2], act.vec = act.vec, penalty.factor=penalty.factor, max.lambda = max.lambda,
-                     it.max = it.max.cv, screen_ind=screen_ind,str=str)
+                     tau = parms2.min[2], act.vec = act.vec, penalty.factor=penalty.factor, group.penalty=group.penalty,
+                     max.lambda = max.lambda, it.max = it.max.cv, screen_ind=screen_ind,str=str)
     xtest <- xmat[which, , drop = F]
     yhat <- predictcme(fitobj, xtest, type="response")
     predmat[which, , ] <- loss(fitobj,y[which],yhat,family=family,type.measure=type.measure)
@@ -172,8 +173,8 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
   print(paste0("Fitting full data ..."))
   fitall <- glmcmenet(xme = xme, xcme = xcme, y,  family=family, lambda.sib = lambda.sib,
                    lambda.cou = lambda.cou, gamma = obj$params[3],
-                   tau = obj$params[4], act.vec = act.vec, penalty.factor=penalty.factor, max.lambda = max.lambda,
-                   it.max = it.max, screen_ind=screen_ind,str=str)
+                   tau = obj$params[4], act.vec = act.vec, penalty.factor=penalty.factor, group.penalty=group.penalty,
+                   max.lambda = max.lambda, it.max = it.max, screen_ind=screen_ind,str=str)
   obj$cme.fit <- fitall
   obj$select.idx <- which(fitall$coefficients[, which(lambda.sib ==
                                                         obj$params[1]), which(lambda.cou == obj$params[2])] !=

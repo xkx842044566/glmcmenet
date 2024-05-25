@@ -53,8 +53,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // cme
-List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, CharacterVector& family, NumericVector& lambda_sib_vec, NumericVector& lambda_cou_vec, NumericVector& gamma_vec, NumericVector& tau_vec, NumericVector& XX_me_sl, NumericVector& XX_cme_sl, NumericVector& beta_vec, NumericVector& act_vec, NumericVector& multiplier, double lambda_max, int it_max, int it_warm, int reset, bool screen_ind);
-RcppExport SEXP _glmcmenet_cme(SEXP XX_meSEXP, SEXP XX_cmeSEXP, SEXP yySEXP, SEXP familySEXP, SEXP lambda_sib_vecSEXP, SEXP lambda_cou_vecSEXP, SEXP gamma_vecSEXP, SEXP tau_vecSEXP, SEXP XX_me_slSEXP, SEXP XX_cme_slSEXP, SEXP beta_vecSEXP, SEXP act_vecSEXP, SEXP multiplierSEXP, SEXP lambda_maxSEXP, SEXP it_maxSEXP, SEXP it_warmSEXP, SEXP resetSEXP, SEXP screen_indSEXP) {
+List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, CharacterVector& family, NumericVector& lambda_sib_vec, NumericVector& lambda_cou_vec, NumericVector& gamma_vec, NumericVector& tau_vec, NumericVector& XX_me_sl, NumericVector& XX_cme_sl, NumericVector& beta_vec, NumericVector& act_vec, NumericVector& multiplier, NumericVector& multiplier_g, double lambda_max, int it_max, int it_warm, int reset, bool screen_ind);
+RcppExport SEXP _glmcmenet_cme(SEXP XX_meSEXP, SEXP XX_cmeSEXP, SEXP yySEXP, SEXP familySEXP, SEXP lambda_sib_vecSEXP, SEXP lambda_cou_vecSEXP, SEXP gamma_vecSEXP, SEXP tau_vecSEXP, SEXP XX_me_slSEXP, SEXP XX_cme_slSEXP, SEXP beta_vecSEXP, SEXP act_vecSEXP, SEXP multiplierSEXP, SEXP multiplier_gSEXP, SEXP lambda_maxSEXP, SEXP it_maxSEXP, SEXP it_warmSEXP, SEXP resetSEXP, SEXP screen_indSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -71,12 +71,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericVector& >::type beta_vec(beta_vecSEXP);
     Rcpp::traits::input_parameter< NumericVector& >::type act_vec(act_vecSEXP);
     Rcpp::traits::input_parameter< NumericVector& >::type multiplier(multiplierSEXP);
+    Rcpp::traits::input_parameter< NumericVector& >::type multiplier_g(multiplier_gSEXP);
     Rcpp::traits::input_parameter< double >::type lambda_max(lambda_maxSEXP);
     Rcpp::traits::input_parameter< int >::type it_max(it_maxSEXP);
     Rcpp::traits::input_parameter< int >::type it_warm(it_warmSEXP);
     Rcpp::traits::input_parameter< int >::type reset(resetSEXP);
     Rcpp::traits::input_parameter< bool >::type screen_ind(screen_indSEXP);
-    rcpp_result_gen = Rcpp::wrap(cme(XX_me, XX_cme, yy, family, lambda_sib_vec, lambda_cou_vec, gamma_vec, tau_vec, XX_me_sl, XX_cme_sl, beta_vec, act_vec, multiplier, lambda_max, it_max, it_warm, reset, screen_ind));
+    rcpp_result_gen = Rcpp::wrap(cme(XX_me, XX_cme, yy, family, lambda_sib_vec, lambda_cou_vec, gamma_vec, tau_vec, XX_me_sl, XX_cme_sl, beta_vec, act_vec, multiplier, multiplier_g, lambda_max, it_max, it_warm, reset, screen_ind));
     return rcpp_result_gen;
 END_RCPP
 }
