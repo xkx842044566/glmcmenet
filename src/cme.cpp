@@ -2573,8 +2573,8 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
         // v = wsqsum(X_me, W, nn, j)/((double)nn);
         // string me = Rcpp::as<string>(names_me[j]);
         // int delta_ind = findind(effectIndexMap,me);
-        delta_sib[j] = delta_sib[j] * m_sib[j] * ( exp( -(tau/lambda[0]) * m_me[j] * mcp(beta_me[j],lambda[0],gamma) ) );
-        delta_cou[j] = delta_cou[j] * m_cou[j] * ( exp( -(tau/lambda[1]) * m_me[j] * mcp(beta_me[j],lambda[1],gamma) ) );
+        delta_sib[j] = delta_sib[j] * ( exp( -(tau/lambda[0]) * m_me[j] * mcp(beta_me[j],lambda[0],gamma) ) );
+        delta_cou[j] = delta_cou[j] * ( exp( -(tau/lambda[1]) * m_me[j] * mcp(beta_me[j],lambda[1],gamma) ) );
       }
       for (int j=0;j<pme;j++){ //parent effect
         for (int k=0;k<(2*(pme-1));k++){ //conditioned effect
@@ -2642,8 +2642,8 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
             cj = wcrossprod(X_me, resid, W, nn, j);
             vj = wsqsum(X_me, W, nn, j)/((double)nn);
 
-            thresh = max(delta_sib[j]+delta_cou[j]+vj*gamma/(vj*gamma-delta_sib[j]*m_me[j]/lambda[0]-delta_cou[j]*m_me[j]/lambda[1])*(lambda[0]-lambda_sib_vec[a-1]),
-                         delta_sib[j]+delta_cou[j]+vj*gamma/(vj*gamma-delta_sib[j]*m_me[j]/lambda[0]-delta_cou[j]*m_me[j]/lambda[1])*(lambda[1]-lambda_cou_vec[b-1]));
+            thresh = max(lambda[0]+lambda[1]+vj*gamma*m_sib[j]/(vj*gamma/m_me[j]-m_sib[j]-m_cou[j])*(lambda[0]-lambda_sib_vec[a-1]),
+                         lambda[0]+lambda[1]+vj*gamma*m_cou[j]/(vj*gamma/m_me[j]-m_sib[j]-m_cou[j])*(lambda[1]-lambda_cou_vec[b-1]));
             if (abs(cj) < thresh) {
               scr_me[j] = false;
               num_scr --;
@@ -2665,8 +2665,8 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
                 cj = wcrossprod(X_cme, resid, W, nn, cmeind);
                 vj = wsqsum(X_cme, W, nn, cmeind)/((double)nn);
 
-                thresh = max(delta_sib[j]+delta_cou[j]+vj*gamma/(vj*gamma-delta_sib[j]*m_cme[j]/lambda[0]-delta_cou[j]*m_cme[j]/lambda[1])*(lambda[0]-lambda_sib_vec[a-1]),
-                             delta_sib[cmeind]+delta_cou[cmeind]+vj*gamma/(vj*gamma-delta_sib[cmeind]*m_cme[cmeind]/lambda[0]-delta_cou[cmeind]*m_cme[cmeind]/lambda[1])*(lambda[1]-lambda_cou_vec[b-1]));
+                thresh = max(lambda[0]+lambda[1]+vj*gamma*m_sib[j]/(vj*gamma/m_cme[cmeind]-m_sib[j]-m_cou[condind])*(lambda[0]-lambda_sib_vec[a-1]),
+                             lambda[0]+lambda[1]+vj*gamma*m_cou[condind]/(vj*gamma/m_cme[cmeind]-m_sib[j]-m_cou[condind])*(lambda[1]-lambda_cou_vec[b-1]));
                 if (abs(cj) < thresh || !scr_me[j]) {
                   scr_cme[cmeind] = false;
                   num_scr --;
