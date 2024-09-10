@@ -9,16 +9,16 @@
 
 /* .Call calls */
 extern SEXP _glmcmenet_cme(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-extern SEXP _glmcmenet_cme_str(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-extern SEXP _glmcmenet_cme_wls(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-extern SEXP _glmcmenet_cme_gaussian(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+//extern SEXP _glmcmenet_cme_str(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+//extern SEXP _glmcmenet_cme_wls(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP _glmcmenet_cme_gaussian(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP _glmcmenet_mcp(SEXP, SEXP, SEXP);
 
 static const R_CallMethodDef CallEntries[] = {
   {"_glmcmenet_cme", (DL_FUNC) &_glmcmenet_cme, 19},
-  {"_glmcmenet_cme_str", (DL_FUNC) &_glmcmenet_cme_str, 18},
-  {"_glmcmenet_cme_wls", (DL_FUNC) &_glmcmenet_cme_str, 17},
-  {"_glmcmenet_cme_gaussian", (DL_FUNC) &_glmcmenet_cme_str, 16},
+  //{"_glmcmenet_cme_str", (DL_FUNC) &_glmcmenet_cme_str, 18},
+  //{"_glmcmenet_cme_wls", (DL_FUNC) &_glmcmenet_cme_str, 17},
+  {"_glmcmenet_cme_gaussian", (DL_FUNC) &_glmcmenet_cme_gaussian, 18},
   {"_glmcmenet_mcp", (DL_FUNC) &_glmcmenet_mcp,  3},
   {NULL, NULL, 0}
 };

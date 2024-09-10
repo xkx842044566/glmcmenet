@@ -1,10 +1,10 @@
-cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfolds = 10, var.names = NULL, nlambda.sib = 20,
-          nlambda.cou = 20, lambda.min.ratio = 1e-06, ngamma = 20,
-          max.gamma = 150, ntau = 20, max.tau = 0.2, tau.min.ratio = 0.001,
-          it.max = 250, it.max.cv = 25, type.measure=c("deviance","class","adaptive_dev"),
-          warm.str = c("lasso","adaptive_lasso","elastic","ncvreg","NULL"),
-          penalty.factor=rep(1,ncol(xme) + ncol(xcme)), group.penalty=rep(1,2*ncol(xme)),
-          screen_ind=F,str=F)
+cv.glmcmenet <- function (xme, xcme, y, family = c("gaussian","binomial", "poisson"), nfolds = 10, var.names = NULL, nlambda.sib = 20,
+                          nlambda.cou = 20, lambda.min.ratio = 1e-06, ngamma = 20,
+                          max.gamma = 150, ntau = 20, max.tau = 0.2, tau.min.ratio = 0.001,
+                          it.max = 250, it.max.cv = 25, type.measure=c("deviance","class","adaptive_dev"),
+                          warm.str = c("lasso","adaptive_lasso","elastic","ncvreg","NULL"),
+                          penalty.factor=rep(1,ncol(xme) + ncol(xcme)), group.penalty=rep(1,2*ncol(xme)),
+                          screen_ind=F,str=F)
 {
   pme <- ncol(xme)
   pcme <- ncol(xcme)
@@ -14,10 +14,10 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
   min.gamma <- max(max(apply(xmat,2,function(x){8*nrow(xmat)/sum(x^2)}))+ 0.001,1/(0.125 - min.tau) + 0.001)
   act.vec <- rep(-1, ncol(xme) + ncol(xcme))
   if (warm.str == "lasso") {
-      cvlas <- cv.glmnet(cbind(xme, xcme), y,family = family,alpha=1,type.measure = "deviance")
-      lasfit <- cvlas$glmnet.fit
-      lasind <- which(lasfit$beta[, which(cvlas$lambda ==cvlas$lambda.min)] != 0)
-      act.vec[lasind] <- 1
+    cvlas <- cv.glmnet(cbind(xme, xcme), y,family = family,alpha=1,type.measure = "deviance")
+    lasfit <- cvlas$glmnet.fit
+    lasind <- which(lasfit$beta[, which(cvlas$lambda ==cvlas$lambda.min)] != 0)
+    act.vec[lasind] <- 1
   } else if (warm.str == "adaptive_lasso") {
     cv.ridge <- cv.glmnet(cbind(xme,xcme),y, family=family, alpha=0)
     w3 <- 1/abs(matrix(coef(cv.ridge, s=cv.ridge$lambda.min)
@@ -95,7 +95,7 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
     foldid <- double(n)
     foldid[y==1] <- sample(fold1)
     foldid[y==0] <- sample(fold0)
-  }else if (family=="poisson") {
+  }else {
     foldid <- sample(1:n %% nfolds)
     foldid[foldid==0] <- nfolds
   }
@@ -110,9 +110,9 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
     setTxtProgressBar(pb, i/nfolds)
     which = (foldid == i)
     fitobj <- glmcmenet(xme = xme[!which, , drop = F], xcme = xcme[!which,, drop = F], y = y[!which],  family=family,
-                     lambda.sib = parms1.min[1],lambda.cou = parms1.min[2], gamma = gamma_vec,
-                     tau = tau_vec, act.vec = act.vec, penalty.factor=penalty.factor, group.penalty=group.penalty,
-                     max.lambda = max.lambda, it.max = it.max.cv, screen_ind=F,str=str)
+                        lambda.sib = parms1.min[1],lambda.cou = parms1.min[2], gamma = gamma_vec,
+                        tau = tau_vec, act.vec = act.vec, penalty.factor=penalty.factor, group.penalty=group.penalty,
+                        max.lambda = max.lambda, it.max = it.max.cv, screen_ind=F,str=str)
     xtest <- xmat[which, , drop = F]
     yhat <- predictcme(fitobj, xtest, type="response")
     predmat[which, , ] <- loss(fitobj,y[which],yhat,family=family,type.measure=type.measure)
@@ -146,10 +146,10 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
     setTxtProgressBar(pb, i/nfolds)
     which = (foldid == i)
     fitobj <- glmcmenet(xme = xme[!which, , drop = F], xcme = xcme[!which,
-                                                                , drop = F], y = y[!which], family=family,
-                     lambda.sib = lambda.sib,lambda.cou = lambda.cou, gamma = parms2.min[1],
-                     tau = parms2.min[2], act.vec = act.vec, penalty.factor=penalty.factor, group.penalty=group.penalty,
-                     max.lambda = max.lambda, it.max = it.max.cv, screen_ind=screen_ind,str=str)
+                                                                   , drop = F], y = y[!which], family=family,
+                        lambda.sib = lambda.sib,lambda.cou = lambda.cou, gamma = parms2.min[1],
+                        tau = parms2.min[2], act.vec = act.vec, penalty.factor=penalty.factor, group.penalty=group.penalty,
+                        max.lambda = max.lambda, it.max = it.max.cv, screen_ind=screen_ind,str=str)
     xtest <- xmat[which, , drop = F]
     yhat <- predictcme(fitobj, xtest, type="response")
     predmat[which, , ] <- loss(fitobj,y[which],yhat,family=family,type.measure=type.measure)
@@ -172,9 +172,9 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
   #Perform selection on full data with final parameters
   print(paste0("Fitting full data ..."))
   fitall <- glmcmenet(xme = xme, xcme = xcme, y,  family=family, lambda.sib = lambda.sib,
-                   lambda.cou = lambda.cou, gamma = obj$params[3],
-                   tau = obj$params[4], act.vec = act.vec, penalty.factor=penalty.factor, group.penalty=group.penalty,
-                   max.lambda = max.lambda, it.max = it.max, screen_ind=screen_ind,str=str)
+                      lambda.cou = lambda.cou, gamma = obj$params[3],
+                      tau = obj$params[4], act.vec = act.vec, penalty.factor=penalty.factor, group.penalty=group.penalty,
+                      max.lambda = max.lambda, it.max = it.max, screen_ind=screen_ind,str=str)
   obj$cme.fit <- fitall
   obj$select.idx <- which(fitall$coefficients[, which(lambda.sib ==
                                                         obj$params[1]), which(lambda.cou == obj$params[2])] !=
@@ -182,7 +182,7 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("binomial", "poisson"), nfold
   #if(length(obj$select.idx)>0){
   #  break
   #}
-#}
+  #}
 
   obj$select.names <- var.names[obj$select.idx]
 
