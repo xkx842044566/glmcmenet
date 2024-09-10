@@ -34,8 +34,7 @@ cme_gaussian <- function (XX_me, XX_cme, yy, lambda_sib_vec, lambda_cou_vec,
                           gamma_vec, tau_vec, XX_me_sl, XX_cme_sl, beta_vec, act_vec, multiplier, multiplier_g,
                           lambda_max, it_max, it_warm, reset, screen_ind)
 {
-  .Call(`_glmcmenet_cme_gaussian`, XX, yy, K1, lambda_sib_vec,
-        lambda_cou_vec, gamma_vec, tau_vec, XX_sl,
-        beta_vec, act_vec, multiplier, lambda_max, it_max, it_warm, reset,
-        screen_ind)
+  .Call(`_glmcmenet_cme_gaussian`, XX_me, XX_cme, yy, lambda_sib_vec, lambda_cou_vec,
+        gamma_vec, tau_vec, XX_me_sl, XX_cme_sl, beta_vec, act_vec, multiplier, multiplier_g,
+        lambda_max, it_max, it_warm, reset, screen_ind)
 }
