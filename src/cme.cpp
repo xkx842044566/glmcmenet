@@ -1340,7 +1340,7 @@ bool coord_des_onerun_gaussian(int pme, int pcme, int nn, NumericVector& lambda,
                                bool dummy, double tau, double gamma,
                                vector<double>& X_me, vector<double>& X_cme, NumericVector& yy,
                                vector<double>& delta_sib, vector<double>& delta_cou,
-                               vector<bool>& act_me, vector<bool>& act_cme, double& inter,
+                               vector<bool>& act_me, vector<bool>& act_cme, //double& inter,
                                vector<double>& beta_me, vector<double>& beta_cme,
                                vector<double>& m_me, vector<double>& m_cme,vector<double>& m_sib, vector<double>& m_cou,
                                vector<double>& resid){
@@ -2663,27 +2663,6 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
 
             //cout << "it_inner: " << it_inner << endl;
 
-            //Update active set
-            num_act = 0;
-            for (int j=0;j<pme;j++){
-              if ((abs(beta_me[j])>0.0)){ //||(act_vec[j]>0.0)
-                act_me[j] = true;
-                num_act ++;
-              }
-              else{
-                act_me[j] = false;
-              }
-            }
-            for (int j=0;j<pcme;j++){
-              if ((abs(beta_cme[j])>0.0)){ //||(act_vec[j+pme]>0.0)
-                act_cme[j] = true;
-                num_act ++;
-              }
-              else{
-                act_cme[j] = false;
-              }
-            }
-
             //check violation in strong sets\updated active set, update active set
             int violations = 0;
             for (int j=0; j<pme; j++) {
@@ -2763,6 +2742,28 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
           cout << "violations:" << violations << endl;
           //until no violation
           if (violations==0) break;
+        }
+
+
+        //Update active set
+        num_act = 0;
+        for (int j=0;j<pme;j++){
+          if ((abs(beta_me[j])>0.0)){ //||(act_vec[j]>0.0)
+            act_me[j] = true;
+            num_act ++;
+          }
+          else{
+            act_me[j] = false;
+          }
+        }
+        for (int j=0;j<pcme;j++){
+          if ((abs(beta_cme[j])>0.0)){ //||(act_vec[j+pme]>0.0)
+            act_cme[j] = true;
+            num_act ++;
+          }
+          else{
+            act_cme[j] = false;
+          }
         }
 
         cout << "converge act set" << num_act << endl;
@@ -3506,7 +3507,7 @@ List cme_gaussian(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy
   arma::mat scr_mat(pme+pcme,niter_1);
 
 
-  double inter= 0.0; //for intercept
+  //double inter= 0.0; //for intercept
   double inprod = 0.0; //inner product
   double cj = 0.0;
   double thresh = 0.0; //threshold for screening
@@ -3692,7 +3693,7 @@ List cme_gaussian(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy
           //                                        delta_sib, delta_cou, scr_me, scr_cme, inter, beta_me, beta_cme, m_me, m_cme, m_sib, m_cou, resid);
           //} else{
           chng_flag = coord_des_onerun_gaussian(pme, pcme, nn, lambda, cur_delta, chng_flag, tau, gamma, X_me, X_cme, yy,
-                                                delta_sib, delta_cou, act_me, act_cme, inter, beta_me, beta_cme, m_me, m_cme, m_sib, m_cou, resid);
+                                                delta_sib, delta_cou, act_me, act_cme, beta_me, beta_cme, m_me, m_cme, m_sib, m_cou, resid);
           //}
 
         }
@@ -3750,7 +3751,7 @@ List cme_gaussian(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy
               //                                        delta_sib, delta_cou, scr_me, scr_cme, inter, beta_me, beta_cme, m_me, m_cme, m_sib, m_cou, resid);
               //} else {
               chng_flag = coord_des_onerun_gaussian(pme, pcme, nn, lambda, cur_delta, chng_flag, tau, gamma, X_me, X_cme, yy,
-                                                    delta_sib, delta_cou, act_me, act_cme, inter, beta_me, beta_cme, m_me, m_cme, m_sib, m_cou, resid);
+                                                    delta_sib, delta_cou, act_me, act_cme, beta_me, beta_cme, m_me, m_cme, m_sib, m_cou, resid);
               //}
 
               //Update cont flag for termination
@@ -3762,26 +3763,6 @@ List cme_gaussian(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy
             //cout << "it_inner: " << it_inner << endl;
 
             //Rcout << accumulate(act.begin(),act.end(),0) << endl;
-            //Update active set
-            num_act = 0;
-            for (int j=0;j<pme;j++){
-              if ((abs(beta_me[j])>0.0||(act_vec[j]>0.0))){ //
-                act_me[j] = true;
-                num_act ++;
-              }
-              else{
-                act_me[j] = false;
-              }
-            }
-            for (int j=0;j<pcme;j++){
-              if ((abs(beta_cme[j])>0.0)||(act_vec[j+pme]>0.0)){ //
-                act_cme[j] = true;
-                num_act ++;
-              }
-              else{
-                act_cme[j] = false;
-              }
-            }
 
             //check violation in strong sets\updated active set, update active set
             int violations = 0;
@@ -3864,6 +3845,27 @@ List cme_gaussian(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy
           cout << "violations:" << violations << endl;
           //until no violation
           if (violations==0) break;
+        }
+
+        //Update active set
+        num_act = 0;
+        for (int j=0;j<pme;j++){
+          if ((abs(beta_me[j])>0.0||(act_vec[j]>0.0))){ //
+            act_me[j] = true;
+            num_act ++;
+          }
+          else{
+            act_me[j] = false;
+          }
+        }
+        for (int j=0;j<pcme;j++){
+          if ((abs(beta_cme[j])>0.0)||(act_vec[j+pme]>0.0)){ //
+            act_cme[j] = true;
+            num_act ++;
+          }
+          else{
+            act_cme[j] = false;
+          }
         }
 
         cout << "converge act set" << num_act << endl;
