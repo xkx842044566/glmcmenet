@@ -2583,7 +2583,7 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
           }
         }
 
-        cout << "strong set:" << num_scr << endl;
+        //cout << "strong set:" << num_scr << endl;
 
         //Active set reset for it_warm iterations
         for (int m=0; m<it_warm; m++){
@@ -2620,7 +2620,7 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
           }
         }
 
-        cout << "warm act:" << num_act << endl;
+        //cout << "warm act:" << num_act << endl;
 
         //Cycle on active set
         it_inner = 0; //inner iteration count
@@ -2651,7 +2651,7 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
               }
             }//end while
 
-            cout << "it_inner: " << it_inner << endl;
+            //cout << "it_inner: " << it_inner << endl;
 
             //Update active set
             num_act = 0;
@@ -2710,7 +2710,7 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
                 }
               }
             }
-            cout << "violations:" << violations << endl;
+            //cout << "violations:" << violations << endl;
             if (violations==0) break;
           }
 
@@ -2745,17 +2745,17 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
               inprod = wcrossprod(X_cme, resid, W, nn, j)/((double)nn); //checked to pod from update eqn (mod from above eqn)
               kkt_bool = kkt(inprod, cur_delta);
               if (!kkt_bool) {
-                act_cme[j] = scr_cme[j] = 1;
+                act_cme[j] = scr_cme[j] = true;
                 violations++;
               }
             }
           }
-          cout << "violations:" << violations << endl;
+          //cout << "violations:" << violations << endl;
           //until no violation
           if (violations==0) break;
         }
 
-        cout << "converge act set" << num_act << endl;
+        //cout << "converge act set" << num_act << endl;
 
         // Rcout << accumulate(act_me.begin(),act_me.end(),0) << endl;
         // Rcout << accumulate(act_cme.begin(),act_cme.end(),0) << endl;
@@ -3664,7 +3664,7 @@ List cme_gaussian(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy
           }
         }
 
-        cout << "strong set:" << num_scr << endl;
+        //cout << "strong set:" << num_scr << endl;
 
         //Active set reset for it_warm iterations
         for (int m=0; m<it_warm; m++){
@@ -3708,7 +3708,7 @@ List cme_gaussian(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy
           }
         }
 
-        cout << "warm act:" << num_act << endl;
+        //cout << "warm act:" << num_act << endl;
 
         //Cycle on active set
         it_inner = 0; //inner iteration count
@@ -3740,7 +3740,7 @@ List cme_gaussian(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy
               }
             }//end while
 
-            cout << "it_inner: " << it_inner << endl;
+            //cout << "it_inner: " << it_inner << endl;
 
             //Rcout << accumulate(act.begin(),act.end(),0) << endl;
             //Update active set
@@ -3802,7 +3802,7 @@ List cme_gaussian(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy
                 }
               }
             }
-            cout << "violations:" << violations << endl;
+            //cout << "violations:" << violations << endl;
             if (violations==0) break;
           }
 
@@ -3837,12 +3837,12 @@ List cme_gaussian(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy
               inprod = crossprod(X_cme, resid, nn, j);
               kkt_bool = kkt(inprod, cur_delta);
               if (!kkt_bool) {
-                act_cme[j] = scr_cme[j] = 1;
+                act_cme[j] = scr_cme[j] = true;
                 violations++;
               }
             }
           }
-          cout << "violations:" << violations << endl;
+          //cout << "violations:" << violations << endl;
           //until no violation
           if (violations==0) break;
         }
