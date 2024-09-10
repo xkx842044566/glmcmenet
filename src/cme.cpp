@@ -2516,6 +2516,16 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
         }
       }
 
+      num_scr = 0;
+      for (int i=0;i<pme;i++){//reset active flag
+        scr_me[i] = true;
+        num_scr ++;
+      }
+      for (int i=0;i<pcme;i++){
+        scr_cme[i] = true;
+        num_scr ++;
+      }
+
       //Recompute deltas
       fill(delta_sib.begin(),delta_sib.end(),lambda[0]);
       fill(delta_cou.begin(),delta_cou.end(),lambda[1]);
@@ -2583,7 +2593,7 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
           }
         }
 
-        //cout << "strong set:" << num_scr << endl;
+        cout << "strong set:" << num_scr << endl;
 
         //Active set reset for it_warm iterations
         for (int m=0; m<it_warm; m++){
@@ -2620,7 +2630,7 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
           }
         }
 
-        //cout << "warm act:" << num_act << endl;
+        cout << "warm act:" << num_act << endl;
 
         //Cycle on active set
         it_inner = 0; //inner iteration count
@@ -2750,12 +2760,12 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
               }
             }
           }
-          //cout << "violations:" << violations << endl;
+          cout << "violations:" << violations << endl;
           //until no violation
           if (violations==0) break;
         }
 
-        //cout << "converge act set" << num_act << endl;
+        cout << "converge act set" << num_act << endl;
 
         // Rcout << accumulate(act_me.begin(),act_me.end(),0) << endl;
         // Rcout << accumulate(act_cme.begin(),act_cme.end(),0) << endl;
@@ -3573,6 +3583,15 @@ List cme_gaussian(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy
       for (int i=0;i<nn;i++){//reset residuals
         resid[i] = yy(i) - ymean;
       }
+      num_scr = 0;
+      for (int i=0;i<pme;i++){//reset active flag
+        scr_me[i] = true;
+        num_scr ++;
+      }
+      for (int i=0;i<pcme;i++){
+        scr_cme[i] = true;
+        num_scr ++;
+      }
 
       //Recompute deltas
       fill(delta_sib.begin(),delta_sib.end(),lambda[0]); //assigns each element the value lambda[0]
@@ -3664,7 +3683,7 @@ List cme_gaussian(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy
           }
         }
 
-        //cout << "strong set:" << num_scr << endl;
+        cout << "strong set:" << num_scr << endl;
 
         //Active set reset for it_warm iterations
         for (int m=0; m<it_warm; m++){
@@ -3842,7 +3861,7 @@ List cme_gaussian(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy
               }
             }
           }
-          //cout << "violations:" << violations << endl;
+          cout << "violations:" << violations << endl;
           //until no violation
           if (violations==0) break;
         }
