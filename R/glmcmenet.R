@@ -4,7 +4,7 @@ glmcmenet <- function (xme, xcme, y, family=c("gaussian","binomial", "poisson"),
                        max.lambda = lambda0.cme(cbind(xme,xcme), y), gamma = 1/(0.125 - tau) + 0.001, tau = 0.01,
                        act.vec = rep(1,ncol(xme) + ncol(xcme)), beta0 = rep(0, ncol(xme) + ncol(xcme)),
                        penalty.factor=rep(1,ncol(xme) + ncol(xcme)), group.penalty=rep(1,2*ncol(xme)),
-                       it.max = 250, screen_ind=F,str=F)
+                       it.max = 250, screen_ind=F)
 {
   family <- match.arg(family)
   if (!is.double(penalty.factor)) penalty.factor <- as.double(penalty.factor)

@@ -430,6 +430,92 @@ bool kkt(double inprod,  NumericVector cur_delta){
   return(ret);
 }
 
+//screen rule condition check
+bool screen_rule_me(double inprod, double j, double a, double b,
+                    NumericVector& lambda_sib_vec, NumericVector& lambda_cou_vec,
+                    double gamma_v, vector<double>& delta_sib, vector<double>& delta_cou,
+                    vector<double>& m_me, vector<double>& m_sib, vector<double>& m_cou){
+
+  double thresh=0;
+  double thresh1=0;
+  double thresh2=0;
+  double thresh3=0;
+  bool active=true;
+  // if no active effect in sibling for setting (lambda_sib_l-1, lambda_cou_m)
+  //cout << "inprod:" << inprod <<"diff1:" << abs(lambda_sib_vec[a-1]-delta_sib[j]) << endl;
+  if(abs(lambda_sib_vec[a-1]-delta_sib[j])<1e-05){
+    thresh1 = lambda_sib_vec[a] + delta_cou[j] + gamma_v*m_sib[j]/(gamma_v/m_me[j]-m_sib[j]-m_cou[j]*delta_cou[j]/lambda_cou_vec[b])*(lambda_sib_vec[a]-lambda_sib_vec[a-1]);
+    //cout << "thresh1:" << thresh1 << endl;
+  }
+  //cout << "diff2:" << abs(lambda_cou_vec[b-1]-delta_cou[j]) << endl;
+  if(abs(lambda_cou_vec[b-1]-delta_cou[j])<1e-05){
+    thresh2 = delta_sib[j] + lambda_cou_vec[b] + gamma_v*m_cou[j]/(gamma_v/m_me[j]-m_sib[j]*delta_sib[j]/lambda_sib_vec[a]-m_cou[j])*(lambda_cou_vec[b]-lambda_cou_vec[b-1]);
+    //cout << "thresh2:" << thresh2 << endl;
+  }
+  if(abs(lambda_sib_vec[a-1]-delta_sib[j])<1e-05 && abs(lambda_cou_vec[b-1]-delta_cou[j])<1e-05){
+    thresh3 = max(lambda_sib_vec[a]+lambda_cou_vec[b]+gamma_v*m_sib[j]/(gamma_v/m_me[j]-m_sib[j]-m_cou[j])*(lambda_sib_vec[a]-lambda_sib_vec[a-1]),
+                  lambda_sib_vec[a]+lambda_cou_vec[b]+gamma_v*m_cou[j]/(gamma_v/m_me[j]-m_sib[j]-m_cou[j])*(lambda_cou_vec[b]-lambda_cou_vec[b-1]));
+    //cout << "thresh3:" << thresh3 << endl;
+  }
+  thresh = max(max(thresh1,thresh2),thresh3);
+  if (abs(inprod) < thresh) {
+    active = false;
+  } else {
+    active = true;
+  }
+
+  return(active);
+}
+
+// for (int j=0;j<pme;j++){ //parent effect
+//   for (int k=0;k<(2*(pme-1));k++){ //conditioned effect
+//     //for (int j=0; j<pcme; j++){
+//
+//     int cmeind = j*(2*(pme-1))+k; //index for CME
+//
+//     int condind = floor((double)k/2.0);
+//     if (condind >= j){
+//       condind ++;
+//     }
+//
+//     cj = wcrossprod(X_cme, resid, W, nn, cmeind);
+//     vj = wsqsum(X_cme, W, nn, cmeind)/((double)nn);
+bool screen_rule_cme(double inprod, double j, double k, double cmeind, double condind, double a, double b,
+                     NumericVector& lambda_sib_vec, NumericVector& lambda_cou_vec,
+                     double gamma_v, vector<double>& delta_sib, vector<double>& delta_cou,
+                     vector<double>& m_cme,vector<double>& m_sib, vector<double>& m_cou){
+
+  double thresh=0;
+  double thresh1=0;
+  double thresh2=0;
+  double thresh3=0;
+  bool active=true;
+  // if no active effect in sibling for setting (lambda_sib_l-1, lambda_cou_m)
+  //cout << "inprod:" << inprod <<"diff1:" << abs(lambda_sib_vec[a-1]-delta_sib[j]) << endl;
+  if(abs(lambda_sib_vec[a-1]-delta_sib[j])<1e-04){
+    thresh1 = lambda_sib_vec[a] + delta_cou[condind] + gamma_v*m_sib[j]/(gamma_v/m_cme[cmeind]-m_sib[j]-m_cou[condind]*delta_cou[condind]/lambda_cou_vec[b])*(lambda_sib_vec[a]-lambda_sib_vec[a-1]);
+    //cout << "thresh1:" << thresh1 << endl;
+  }
+  //cout << "diff2:" << abs(lambda_cou_vec[b-1]-delta_cou[j]) << endl;
+  if(abs(lambda_cou_vec[b-1]-delta_cou[j])<1e-04){
+    thresh2 = delta_sib[j] + lambda_cou_vec[b] + gamma_v*m_cou[condind]/(gamma_v/m_cme[cmeind]-m_sib[j]*delta_sib[j]/lambda_sib_vec[a]-m_cou[condind])*(lambda_cou_vec[b]-lambda_cou_vec[b-1]);
+    //cout << "thresh2:" << thresh2 << endl;
+  }
+  if(abs(lambda_sib_vec[a-1]-delta_sib[j])<1e-04 && abs(lambda_cou_vec[b-1]-delta_cou[condind])<1e-04){
+    thresh3 = max(lambda_sib_vec[a]+lambda_cou_vec[b]+gamma_v*m_sib[j]/(gamma_v/m_cme[cmeind]-m_sib[j]-m_cou[condind])*(lambda_sib_vec[a]-lambda_sib_vec[a-1]),
+                  lambda_sib_vec[a]+lambda_cou_vec[b]+gamma_v*m_cou[condind]/(gamma_v/m_cme[cmeind]-m_sib[j]-m_cou[condind])*(lambda_cou_vec[b]-lambda_cou_vec[b-1]));
+    //cout << "thresh3:" << thresh3 << endl;
+  }
+  thresh = max(max(thresh1,thresh2),thresh3);
+  if (abs(inprod) < thresh) {
+    active = false;
+  } else {
+    active = true;
+  }
+
+  return(active);
+}
+
 
 // //One run of coordinate descent with string detection
 // bool coord_des_onerun_str(int pme, int pcme, int nn, NumericVector& lambda, NumericVector& cur_delta,
@@ -734,7 +820,7 @@ bool coord_des_onerun(int pme, int pcme, int nn, NumericVector& lambda, NumericV
                       vector<bool>& act_me, vector<bool>& act_cme, double& inter,
                       vector<double>& beta_me, vector<double>& beta_cme,
                       vector<double>& m_me, vector<double>& m_cme,vector<double>& m_sib, vector<double>& m_cou,
-                      vector<double>& eta, vector<double>& resid, vector<double>& W, double dev){
+                      vector<double>& eta, vector<double>& resid, vector<double>& W, double& dev){
   bool chng_flag = false;
   double cur_beta = 0.0;
   double cur_inter = 0.0;
@@ -817,13 +903,13 @@ bool coord_des_onerun(int pme, int pcme, int nn, NumericVector& lambda, NumericV
         for (int k=0;k<nn;k++){
           resid[k] -= X_me[j*nn+k]*(beta_me[j]-cur_beta);
           eta[k] += X_me[j*nn+k]*(beta_me[j]-cur_beta);
-          // if (familyType == "binomial"){
-          //   mu = pbinomial(eta[k]) ;
-          //   W[k] = fmax2(mu*(1-mu),0.0001);
-          // }else if(familyType == "poisson"){
-          //   mu = ppoisson(eta[k]) ;
-          //   W[k] = fmax2(mu,0.0001);
-          // }
+          if (familyType == "binomial"){
+            mu = pbinomial(eta[k]) ;
+            W[k] = fmax2(mu*(1-mu),0.0001);
+          }else if(familyType == "poisson"){
+            mu = ppoisson(eta[k]) ;
+            W[k] = fmax2(mu,0.0001);
+          }
           //v += (X_me[j*nn+k]*W[k]*X_me[j*nn+k])/((double)nn);
         }
         // xwx = wsqsum(X_me, W, nn, j);
@@ -887,13 +973,13 @@ bool coord_des_onerun(int pme, int pcme, int nn, NumericVector& lambda, NumericV
           for (int ll=0;ll<nn;ll++){
             resid[ll] -= X_cme[cmeind*nn+ll]*(beta_cme[cmeind]-cur_beta);
             eta[ll] += X_cme[cmeind*nn+ll]*(beta_cme[cmeind]-cur_beta);
-            // if (familyType == "binomial"){
-            //   mu = pbinomial(eta[ll]) ;
-            //   W[ll] = fmax2(mu*(1-mu),0.0001);
-            // }else if(familyType == "poisson"){
-            //   mu = ppoisson(eta[ll]) ;
-            //   W[ll] = fmax2(mu,0.0001);
-            // }
+            if (familyType == "binomial"){
+              mu = pbinomial(eta[ll]) ;
+              W[ll] = fmax2(mu*(1-mu),0.0001);
+            }else if(familyType == "poisson"){
+              mu = ppoisson(eta[ll]) ;
+              W[ll] = fmax2(mu,0.0001);
+            }
             //v += (X_me[j*nn+k]*W[k]*X_me[j*nn+k])/((double)nn);
           }
 
@@ -2488,6 +2574,54 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
         }
       }
 
+      // //Update strong set
+      if (lambda_it && screen_ind && a>0 && b>0){
+
+        for (int j=0;j<pme;j++){
+
+          cj = wcrossprod(X_me, resid, W, nn, j)/((double)nn);
+          vj = wsqsum(X_me, W, nn, j)/((double)nn);
+
+          // thresh = max(lambda[0]+lambda[1]+vj*gamma*m_sib[j]/(vj*gamma/m_me[j]-m_sib[j]-m_cou[j])*(lambda[0]-lambda_sib_vec[a-1]),
+          //              lambda[0]+lambda[1]+vj*gamma*m_cou[j]/(vj*gamma/m_me[j]-m_sib[j]-m_cou[j])*(lambda[1]-lambda_cou_vec[b-1]));
+          // if (abs(cj) < thresh) {
+          //   scr_me[j] = false;
+          //   num_scr --;
+          // }
+          scr_me[j] = screen_rule_me(cj, j, a, b, lambda_sib_vec, lambda_cou_vec, gamma*vj, delta_sib, delta_cou,
+                                     m_me, m_sib, m_cou);
+          if(!scr_me[j]){num_scr --;}
+        }
+
+        for (int j=0;j<pme;j++){ //parent effect
+          for (int k=0;k<(2*(pme-1));k++){ //conditioned effect
+            //for (int j=0; j<pcme; j++){
+
+            int cmeind = j*(2*(pme-1))+k; //index for CME
+
+            int condind = floor((double)k/2.0);
+            if (condind >= j){
+              condind ++;
+            }
+
+            cj = wcrossprod(X_cme, resid, W, nn, cmeind)/((double)nn);
+            vj = wsqsum(X_cme, W, nn, cmeind)/((double)nn);
+
+            // thresh = max(lambda[0]+lambda[1]+vj*gamma*m_sib[j]/(vj*gamma/m_cme[cmeind]-m_sib[j]-m_cou[condind])*(lambda[0]-lambda_sib_vec[a-1]),
+            //              lambda[0]+lambda[1]+vj*gamma*m_cou[condind]/(vj*gamma/m_cme[cmeind]-m_sib[j]-m_cou[condind])*(lambda[1]-lambda_cou_vec[b-1]));
+            // if (abs(cj) < thresh || !scr_me[j]) {
+            //   scr_cme[cmeind] = false;
+            //   num_scr --;
+            // }
+            scr_cme[cmeind] = screen_rule_cme(cj, j, k, cmeind, condind, a, b, lambda_sib_vec, lambda_cou_vec, gamma*vj, delta_sib, delta_cou,
+                                              m_cme, m_sib, m_cou);
+            if(!scr_cme[cmeind]){num_scr --;}
+          }
+        }
+      }
+
+      //cout << "strong set:" << num_scr << endl;
+
       // // RESET AFTER EACH RUN
       for (int i=0;i<pme;i++){//reset beta
         beta_me[i] = 0.0;
@@ -2552,49 +2686,6 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
       //Coordinate descent with warm active set resets
       for (int q=0; q<reset; q++){
 
-
-        //Update strong set, after this, strong set will be smaller than active set
-        if (lambda_it && screen_ind && a>0 && b>0){
-
-          for (int j=0;j<pme;j++){
-
-            cj = wcrossprod(X_me, resid, W, nn, j);
-            vj = wsqsum(X_me, W, nn, j)/((double)nn);
-
-            thresh = max(lambda[0]+lambda[1]+vj*gamma*m_sib[j]/(vj*gamma/m_me[j]-m_sib[j]-m_cou[j])*(lambda[0]-lambda_sib_vec[a-1]),
-                         lambda[0]+lambda[1]+vj*gamma*m_cou[j]/(vj*gamma/m_me[j]-m_sib[j]-m_cou[j])*(lambda[1]-lambda_cou_vec[b-1]));
-            if (abs(cj) < thresh) {
-              scr_me[j] = false;
-              num_scr --;
-            }
-          }
-
-          for (int j=0;j<pme;j++){ //parent effect
-            for (int k=0;k<(2*(pme-1));k++){ //conditioned effect
-              //for (int j=0; j<pcme; j++){
-
-              int cmeind = j*(2*(pme-1))+k; //index for CME
-
-              int condind = floor((double)k/2.0);
-              if (condind >= j){
-                condind ++;
-              }
-
-              cj = wcrossprod(X_cme, resid, W, nn, cmeind);
-              vj = wsqsum(X_cme, W, nn, cmeind)/((double)nn);
-
-              thresh = max(lambda[0]+lambda[1]+vj*gamma*m_sib[j]/(vj*gamma/m_cme[cmeind]-m_sib[j]-m_cou[condind])*(lambda[0]-lambda_sib_vec[a-1]),
-                           lambda[0]+lambda[1]+vj*gamma*m_cou[condind]/(vj*gamma/m_cme[cmeind]-m_sib[j]-m_cou[condind])*(lambda[1]-lambda_cou_vec[b-1]));
-              if (abs(cj) < thresh || !scr_me[j]) {
-                scr_cme[cmeind] = false;
-                num_scr --;
-              }
-            }
-          }
-        }
-
-        cout << "strong set:" << num_scr << endl;
-
         //Active set reset for it_warm iterations
         for (int m=0; m<it_warm; m++){
           //if (lambda_it && screen_ind && a>0 && b>0){
@@ -2630,83 +2721,83 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
           }
         }
 
-        cout << "warm act:" << num_act << endl;
+        //cout << "warm act:" << num_act << endl;
 
         //Cycle on active set
         it_inner = 0; //inner iteration count
 
         while (it_inner < it_max_reset){
 
-          while (it_inner < it_max_reset){
+          //while (it_inner < it_max_reset){
 
-            cont = true; //continue flag
-            chng_flag = false; //change flag
+          cont = true; //continue flag
+          chng_flag = false; //change flag
 
-            while (cont){
-              // cout << it_inner << endl;
+          while (cont){
+            // cout << it_inner << endl;
 
-              //Increment count and update flags on active sets
-              it_inner ++;
-              //if (lambda_it && screen_ind && a>0 && b>0){
-              //  chng_flag = coord_des_onerun(pme, pcme, nn, lambda, cur_delta, chng_flag, tau, gamma, X_me, X_cme, yy,
-              //                               family, delta_sib, delta_cou, scr_me, scr_cme, inter, beta_me, beta_cme, m_me, m_cme, m_sib, m_cou, eta, resid, W, dev);
-              //} else {
-              chng_flag = coord_des_onerun(pme, pcme, nn, lambda, cur_delta, chng_flag, tau, gamma, X_me, X_cme, yy,
-                                           family, delta_sib, delta_cou, act_me, act_cme, inter, beta_me, beta_cme, m_me, m_cme, m_sib, m_cou, eta, resid, W, dev);
-              //}
+            //Increment count and update flags on active sets
+            it_inner ++;
+            //if (lambda_it && screen_ind && a>0 && b>0){
+            //  chng_flag = coord_des_onerun(pme, pcme, nn, lambda, cur_delta, chng_flag, tau, gamma, X_me, X_cme, yy,
+            //                               family, delta_sib, delta_cou, scr_me, scr_cme, inter, beta_me, beta_cme, m_me, m_cme, m_sib, m_cou, eta, resid, W, dev);
+            //} else {
+            chng_flag = coord_des_onerun(pme, pcme, nn, lambda, cur_delta, chng_flag, tau, gamma, X_me, X_cme, yy,
+                                         family, delta_sib, delta_cou, act_me, act_cme, inter, beta_me, beta_cme, m_me, m_cme, m_sib, m_cou, eta, resid, W, dev);
+            //}
 
-              //Update cont flag for termination
-              if ( (it_inner >= it_max_reset)||(!chng_flag)){
-                cont = false;
-              }
-            }//end while
-
-            //cout << "it_inner: " << it_inner << endl;
-
-            //check violation in strong sets\updated active set, update active set
-            int violations = 0;
-            for (int j=0; j<pme; j++) {
-              if (act_me[j]==false && scr_me[j]==true) {
-                //z[j] = crossprod(X, s, n, j)/n;
-                //l1 = lam[l] * m[j] * alpha;
-                //xwr = wcrossprod(X_me, resid, W, nn, j);
-                //xwx = wsqsum(X_me, W, nn, j);
-                //v = xwx/((double)nn);
-                // inprod = inprod/((double)nn)+beta_me[j]; i.e, zj in proof
-                //inprod = xwr/((double)nn)+v*beta_me[j]; //checked to pod from update eqn (mod from above eqn)
-                inprod = wcrossprod(X_me, resid, W, nn, j)/((double)nn); //checked to pod from update eqn (mod from above eqn)
-                kkt_bool = kkt(inprod, cur_delta);
-                if (!kkt_bool) {
-                  act_me[j] = scr_me[j] = true;
-                  violations++;
-                }
-              }
+            //Update cont flag for termination
+            if ( (it_inner >= it_max_reset)||(!chng_flag)){
+              cont = false;
             }
-            for (int j=0; j<pcme; j++) {
-              if (act_cme[j]==false && scr_cme[j]==true) {
-                //z[j] = crossprod(X, s, n, j)/n;
-                //l1 = lam[l] * m[j] * alpha;
-                //xwr = wcrossprod(X_cme, resid, W, nn, j);
-                //xwx = wsqsum(X_me, W, nn, j);
-                //v = xwx/((double)nn);
-                // inprod = inprod/((double)nn)+beta_me[j]; i.e, zj in proof
-                //inprod = xwr/((double)nn)+v*beta_cme[j]; //checked to pod from update eqn (mod from above eqn)
-                inprod = wcrossprod(X_cme, resid, W, nn, j)/((double)nn); //checked to pod from update eqn (mod from above eqn)
-                kkt_bool = kkt(inprod, cur_delta);
-                if (!kkt_bool) {
-                  act_cme[j] = scr_cme[j] = 1;
-                  violations++;
-                }
-              }
-            }
-            //cout << "violations:" << violations << endl;
-            if (violations==0) break;
-          }
+          }//end while
+
+          //cout << "it_inner: " << it_inner << endl;
+
+          //check violation in strong sets\updated active set, update active set
+          //   int violations = 0;
+          //   for (int j=0; j<pme; j++) {
+          //     if (act_me[j]==false && scr_me[j]==true) {
+          //       //z[j] = crossprod(X, s, n, j)/n;
+          //       //l1 = lam[l] * m[j] * alpha;
+          //       //xwr = wcrossprod(X_me, resid, W, nn, j);
+          //       //xwx = wsqsum(X_me, W, nn, j);
+          //       //v = xwx/((double)nn);
+          //       // inprod = inprod/((double)nn)+beta_me[j]; i.e, zj in proof
+          //       //inprod = xwr/((double)nn)+v*beta_me[j]; //checked to pod from update eqn (mod from above eqn)
+          //       inprod = wcrossprod(X_me, resid, W, nn, j)/((double)nn); //checked to pod from update eqn (mod from above eqn)
+          //       kkt_bool = kkt(inprod, cur_delta);
+          //       if (!kkt_bool) {
+          //         act_me[j] = scr_me[j] = true;
+          //         violations++;
+          //       }
+          //     }
+          //   }
+          //   for (int j=0; j<pcme; j++) {
+          //     if (act_cme[j]==false && scr_cme[j]==true) {
+          //       //z[j] = crossprod(X, s, n, j)/n;
+          //       //l1 = lam[l] * m[j] * alpha;
+          //       //xwr = wcrossprod(X_cme, resid, W, nn, j);
+          //       //xwx = wsqsum(X_me, W, nn, j);
+          //       //v = xwx/((double)nn);
+          //       // inprod = inprod/((double)nn)+beta_me[j]; i.e, zj in proof
+          //       //inprod = xwr/((double)nn)+v*beta_cme[j]; //checked to pod from update eqn (mod from above eqn)
+          //       inprod = wcrossprod(X_cme, resid, W, nn, j)/((double)nn); //checked to pod from update eqn (mod from above eqn)
+          //       kkt_bool = kkt(inprod, cur_delta);
+          //       if (!kkt_bool) {
+          //         act_cme[j] = scr_cme[j] = 1;
+          //         violations++;
+          //       }
+          //     }
+          //   }
+          //   //cout << "violations:" << violations << endl;
+          //   if (violations==0) break;
+          // }
 
           //check violation in complementary active set\strong set, update active set
           int violations = 0;
           for (int j=0; j<pme; j++) {
-            if (scr_me[j]==false) {
+            if (act_cme[j]==false && scr_me[j]==false) {
               //z[j] = crossprod(X, s, n, j)/n;
               //l1 = lam[l] * m[j] * alpha;
               //xwr = wcrossprod(X_me, resid, W, nn, j);
@@ -2723,7 +2814,7 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
             }
           }
           for (int j=0; j<pcme; j++) {
-            if (scr_cme[j]==false) {
+            if (act_cme[j]==false && scr_cme[j]==false) {
               //z[j] = crossprod(X, s, n, j)/n;
               //l1 = lam[l] * m[j] * alpha;
               //xwr = wcrossprod(X_cme, resid, W, nn, j);
@@ -2739,34 +2830,34 @@ List cme(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy, Charact
               }
             }
           }
-          cout << "violations:" << violations << endl;
+          //cout << "violations:" << violations << endl;
           //until no violation
           if (violations==0) break;
         }
 
 
         //Update active set
-        num_act = 0;
-        for (int j=0;j<pme;j++){
-          if ((abs(beta_me[j])>0.0)){ //||(act_vec[j]>0.0)
-            act_me[j] = true;
-            num_act ++;
-          }
-          else{
-            act_me[j] = false;
-          }
-        }
-        for (int j=0;j<pcme;j++){
-          if ((abs(beta_cme[j])>0.0)){ //||(act_vec[j+pme]>0.0)
-            act_cme[j] = true;
-            num_act ++;
-          }
-          else{
-            act_cme[j] = false;
-          }
-        }
-
-        cout << "converge act set" << num_act << endl;
+        // num_act = 0;
+        // for (int j=0;j<pme;j++){
+        //   if ((abs(beta_me[j])>0.0)){ //||(act_vec[j]>0.0)
+        //     act_me[j] = true;
+        //     num_act ++;
+        //   }
+        //   else{
+        //     act_me[j] = false;
+        //   }
+        // }
+        // for (int j=0;j<pcme;j++){
+        //   if ((abs(beta_cme[j])>0.0)){ //||(act_vec[j+pme]>0.0)
+        //     act_cme[j] = true;
+        //     num_act ++;
+        //   }
+        //   else{
+        //     act_cme[j] = false;
+        //   }
+        // }
+        //
+        // cout << "converge act set" << num_act << endl;
 
         // Rcout << accumulate(act_me.begin(),act_me.end(),0) << endl;
         // Rcout << accumulate(act_cme.begin(),act_cme.end(),0) << endl;
@@ -3574,6 +3665,66 @@ List cme_gaussian(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy
         }
       }
 
+      // //Update screen/strong set
+      num_scr = 0;
+      for (int i=0;i<pme;i++){//reset screen flag
+        scr_me[i] = true;
+        num_scr ++;
+      }
+      for (int i=0;i<pcme;i++){
+        scr_cme[i] = true;
+        num_scr ++;
+      }
+      if (lambda_it && screen_ind && a>0 && b>0){
+
+        for (int j=0;j<pme;j++){
+
+          cj = crossprod(X_me, resid, nn, j)/(double(nn));
+          //cout << "last inprod:" << cj << endl;
+          // thresh = max(lambda[0]+lambda[1]+gamma*m_sib[j]/(gamma/m_me[j]-m_sib[j]-m_cou[j])*(lambda[0]-lambda_sib_vec[a-1]),
+          //              lambda[0]+lambda[1]+gamma*m_cou[j]/(gamma/m_me[j]-m_sib[j]-m_cou[j])*(lambda[1]-lambda_cou_vec[b-1]));
+          // if (abs(cj) < thresh) {
+          //   scr_me[j] = false;
+          //   num_scr --;
+          // }
+          scr_me[j] = screen_rule_me(cj, j, a, b, lambda_sib_vec, lambda_cou_vec, gamma, delta_sib, delta_cou,
+                                     m_me, m_sib, m_cou);
+          if(!scr_me[j]){
+            num_scr --;
+          }
+        }
+
+        for (int j=0;j<pme;j++){ //parent effect
+          for (int k=0;k<(2*(pme-1));k++){ //conditioned effect
+            //for (int j=0; j<pcme; j++){
+
+            int cmeind = j*(2*(pme-1))+k; //index for CME
+
+            int condind = floor((double)k/2.0);
+            if (condind >= j){
+              condind ++;
+            }
+
+            cj = crossprod(X_cme, resid, nn, cmeind)/(double(nn));
+
+            // thresh = max(lambda[0]+lambda[1]+gamma*m_sib[j]/(gamma/m_cme[cmeind]-m_sib[j]-m_cou[condind])*(lambda[0]-lambda_sib_vec[a-1]),
+            //              lambda[0]+lambda[1]+gamma*m_cou[condind]/(gamma/m_cme[cmeind]-m_sib[j]-m_cou[condind])*(lambda[1]-lambda_cou_vec[b-1]));
+            // if (abs(cj) < thresh || !scr_me[j]) {
+            //   scr_cme[cmeind] = false;
+            //   num_scr --;
+            // }
+            scr_cme[cmeind] = screen_rule_cme(cj, j, k, cmeind, condind, a, b, lambda_sib_vec, lambda_cou_vec, gamma, delta_sib, delta_cou,
+                                              m_cme, m_sib, m_cou);
+            if(!scr_cme[cmeind]){
+              num_scr --;
+            }
+          }
+        }
+      }
+
+      //cout << "strong set:" << num_scr << endl;
+
+
       // // RESET AFTER EACH RUN
       for (int i=0;i<pme;i++){//reset beta
         beta_me[i] = 0.0;
@@ -3583,15 +3734,6 @@ List cme_gaussian(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy
       }
       for (int i=0;i<nn;i++){//reset residuals
         resid[i] = yy(i) - ymean;
-      }
-      num_scr = 0;
-      for (int i=0;i<pme;i++){//reset active flag
-        scr_me[i] = true;
-        num_scr ++;
-      }
-      for (int i=0;i<pcme;i++){
-        scr_cme[i] = true;
-        num_scr ++;
       }
 
       //Recompute deltas
@@ -3646,46 +3788,6 @@ List cme_gaussian(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy
       //Coordinate descent with warm active set resets
       for (int q=0; q<reset; q++){
 
-        //Update screen set
-        if (lambda_it && screen_ind && a>0 && b>0){
-
-          for (int j=0;j<pme;j++){
-
-            cj = crossprod(X_me, resid, nn, j);
-
-            thresh = max(lambda[0]+lambda[1]+gamma*m_sib[j]/(gamma/m_me[j]-m_sib[j]-m_cou[j])*(lambda[0]-lambda_sib_vec[a-1]),
-                         lambda[0]+lambda[1]+gamma*m_cou[j]/(gamma/m_me[j]-m_sib[j]-m_cou[j])*(lambda[1]-lambda_cou_vec[b-1]));
-            if (abs(cj) < thresh) {
-              scr_me[j] = false;
-              num_scr --;
-            }
-          }
-
-          for (int j=0;j<pme;j++){ //parent effect
-            for (int k=0;k<(2*(pme-1));k++){ //conditioned effect
-              //for (int j=0; j<pcme; j++){
-
-              int cmeind = j*(2*(pme-1))+k; //index for CME
-
-              int condind = floor((double)k/2.0);
-              if (condind >= j){
-                condind ++;
-              }
-
-              cj = crossprod(X_cme, resid, nn, cmeind);
-
-              thresh = max(lambda[0]+lambda[1]+gamma*m_sib[j]/(gamma/m_cme[cmeind]-m_sib[j]-m_cou[condind])*(lambda[0]-lambda_sib_vec[a-1]),
-                           lambda[0]+lambda[1]+gamma*m_cou[condind]/(gamma/m_cme[cmeind]-m_sib[j]-m_cou[condind])*(lambda[1]-lambda_cou_vec[b-1]));
-              if (abs(cj) < thresh || !scr_me[j]) {
-                scr_cme[cmeind] = false;
-                num_scr --;
-              }
-            }
-          }
-        }
-
-        cout << "strong set:" << num_scr << endl;
-
         //Active set reset for it_warm iterations
         for (int m=0; m<it_warm; m++){
           //if (lambda_it && screen_ind && a>0 && b>0){
@@ -3697,8 +3799,6 @@ List cme_gaussian(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy
           //}
 
         }
-
-
 
         //Update active set
         int num_act = 0;
@@ -3735,81 +3835,81 @@ List cme_gaussian(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy
 
         while (it_inner < it_max_reset){
 
-          while (it_inner < it_max_reset){
+          //while (it_inner < it_max_reset){
 
-            cont = true; //continue flag
-            chng_flag = false; //change flag
+          cont = true; //continue flag
+          chng_flag = false; //change flag
 
-            while (cont){
-
-              //cout << "it_inner: " << it_inner << endl;
-
-              //Increment count and update flags
-              it_inner ++;
-              //if (lambda_it && screen_ind && a>0 && b>0){
-              //  chng_flag = coord_des_onerun_gaussian(pme, pcme, nn, lambda, cur_delta, chng_flag, tau, gamma, X_me, X_cme, yy,
-              //                                        delta_sib, delta_cou, scr_me, scr_cme, inter, beta_me, beta_cme, m_me, m_cme, m_sib, m_cou, resid);
-              //} else {
-              chng_flag = coord_des_onerun_gaussian(pme, pcme, nn, lambda, cur_delta, chng_flag, tau, gamma, X_me, X_cme, yy,
-                                                    delta_sib, delta_cou, act_me, act_cme, beta_me, beta_cme, m_me, m_cme, m_sib, m_cou, resid);
-              //}
-
-              //Update cont flag for termination
-              if ( (it_inner >= it_max_reset)||(!chng_flag) ){
-                cont = false;
-              }
-            }//end while
+          while (cont){
 
             //cout << "it_inner: " << it_inner << endl;
 
-            //Rcout << accumulate(act.begin(),act.end(),0) << endl;
+            //Increment count and update flags
+            it_inner ++;
+            //if (lambda_it && screen_ind && a>0 && b>0){
+            //  chng_flag = coord_des_onerun_gaussian(pme, pcme, nn, lambda, cur_delta, chng_flag, tau, gamma, X_me, X_cme, yy,
+            //                                        delta_sib, delta_cou, scr_me, scr_cme, inter, beta_me, beta_cme, m_me, m_cme, m_sib, m_cou, resid);
+            //} else {
+            chng_flag = coord_des_onerun_gaussian(pme, pcme, nn, lambda, cur_delta, chng_flag, tau, gamma, X_me, X_cme, yy,
+                                                  delta_sib, delta_cou, act_me, act_cme, beta_me, beta_cme, m_me, m_cme, m_sib, m_cou, resid);
+            //}
 
-            //check violation in strong sets\updated active set, update active set
-            int violations = 0;
-            for (int j=0; j<pme; j++) {
-              if (act_me[j]==false && scr_me[j]==true) {
-                //z[j] = crossprod(X, s, n, j)/n;
-                //l1 = lam[l] * m[j] * alpha;
-                //inprod = 0.0;
-                //for (int k=0;k<nn;k++){
-                //  inprod += (resid[k]*X_me[j*nn+k]);
-                //}
-                // inprod = inprod/((double)nn)+beta_me[j];
-                //inprod = inprod/((double)nn)+(((double)nn)-1)/((double)nn)*beta_me[j];
-                inprod = crossprod(X_me, resid, nn, j);
-                kkt_bool = kkt(inprod, cur_delta);
-                if (!kkt_bool) {
-                  act_me[j] = scr_me[j] = true;
-                  violations++;
-                }
-              }
+            //Update cont flag for termination
+            if ( (it_inner >= it_max_reset)||(!chng_flag) ){
+              cont = false;
             }
-            for (int j=0; j<pcme; j++) {
-              if (act_cme[j]==false && scr_cme[j]==true) {
-                //z[j] = crossprod(X, s, n, j)/n;
-                //l1 = lam[l] * m[j] * alpha;
-                //inprod = 0.0;
-                //for (int l=0;l<nn;l++){
-                //  inprod += (resid[l]*X_cme[cmeind*nn+l]);
-                //}
-                // inprod = inprod/((double)nn)+beta_cme[cmeind];
-                //inprod = inprod/((double)nn)+(((double)nn)-1)/((double)nn)*beta_cme[cmeind];
-                inprod = crossprod(X_cme, resid, nn, j);
-                kkt_bool = kkt(inprod, cur_delta);
-                if (!kkt_bool) {
-                  act_cme[j] = scr_cme[j] = 1;
-                  violations++;
-                }
-              }
-            }
-            //cout << "violations:" << violations << endl;
-            if (violations==0) break;
-          }
+          }//end while
+
+          //cout << "it_inner: " << it_inner << endl;
+
+          //Rcout << accumulate(act.begin(),act.end(),0) << endl;
+
+          //check violation in strong sets\updated active set, update active set
+          // int violations = 0;
+          // for (int j=0; j<pme; j++) {
+          //   if (act_me[j]==false && scr_me[j]==true) {
+          //     //z[j] = crossprod(X, s, n, j)/n;
+          //     //l1 = lam[l] * m[j] * alpha;
+          //     //inprod = 0.0;
+          //     //for (int k=0;k<nn;k++){
+          //     //  inprod += (resid[k]*X_me[j*nn+k]);
+          //     //}
+          //     // inprod = inprod/((double)nn)+beta_me[j];
+          //     //inprod = inprod/((double)nn)+(((double)nn)-1)/((double)nn)*beta_me[j];
+          //     inprod = crossprod(X_me, resid, nn, j)/(double(nn));
+          //     kkt_bool = kkt(inprod, cur_delta);
+          //     if (!kkt_bool) {
+          //       act_me[j] = scr_me[j] = true;
+          //       violations++;
+          //     }
+          //   }
+          // }
+          // for (int j=0; j<pcme; j++) {
+          //   if (act_cme[j]==false && scr_cme[j]==true) {
+          //     //z[j] = crossprod(X, s, n, j)/n;
+          //     //l1 = lam[l] * m[j] * alpha;
+          //     //inprod = 0.0;
+          //     //for (int l=0;l<nn;l++){
+          //     //  inprod += (resid[l]*X_cme[cmeind*nn+l]);
+          //     //}
+          //     // inprod = inprod/((double)nn)+beta_cme[cmeind];
+          //     //inprod = inprod/((double)nn)+(((double)nn)-1)/((double)nn)*beta_cme[cmeind];
+          //     inprod = crossprod(X_cme, resid, nn, j)/(double(nn));
+          //     kkt_bool = kkt(inprod, cur_delta);
+          //     if (!kkt_bool) {
+          //       act_cme[j] = scr_cme[j] = true;
+          //       violations++;
+          //     }
+          //   }
+          // }
+          // cout << "violations:" << violations << endl;
+          // if (violations==0) break;
+          //}
 
           //check violation in complementary active set\strong set, update active set
           int violations = 0;
           for (int j=0; j<pme; j++) {
-            if (scr_me[j]==false) {
+            if (act_cme[j]==false && scr_me[j]==false) {
               //z[j] = crossprod(X, s, n, j)/n;
               //l1 = lam[l] * m[j] * alpha;
               //xwr = wcrossprod(X_me, resid, W, nn, j);
@@ -3817,7 +3917,7 @@ List cme_gaussian(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy
               //v = xwx/((double)nn);
               // inprod = inprod/((double)nn)+beta_me[j]; i.e, zj in proof
               //inprod = xwr/((double)nn)+v*beta_me[j]; //checked to pod from update eqn (mod from above eqn)
-              inprod = crossprod(X_me, resid, nn, j);
+              inprod = crossprod(X_me, resid, nn, j)/(double(nn));
               kkt_bool = kkt(inprod, cur_delta);
               if (!kkt_bool) {
                 act_me[j] = scr_me[j] = true;
@@ -3826,7 +3926,7 @@ List cme_gaussian(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy
             }
           }
           for (int j=0; j<pcme; j++) {
-            if (scr_cme[j]==false) {
+            if (act_cme[j]==false && scr_cme[j]==false) {
               //z[j] = crossprod(X, s, n, j)/n;
               //l1 = lam[l] * m[j] * alpha;
               //xwr = wcrossprod(X_cme, resid, W, nn, j);
@@ -3834,7 +3934,7 @@ List cme_gaussian(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy
               //v = xwx/((double)nn);
               // inprod = inprod/((double)nn)+beta_me[j]; i.e, zj in proof
               //inprod = xwr/((double)nn)+v*beta_cme[j]; //checked to pod from update eqn (mod from above eqn)
-              inprod = crossprod(X_cme, resid, nn, j);
+              inprod = crossprod(X_cme, resid, nn, j)/(double(nn));
               kkt_bool = kkt(inprod, cur_delta);
               if (!kkt_bool) {
                 act_cme[j] = scr_cme[j] = true;
@@ -3842,33 +3942,33 @@ List cme_gaussian(NumericMatrix& XX_me, NumericMatrix& XX_cme, NumericVector& yy
               }
             }
           }
-          cout << "violations:" << violations << endl;
+          //cout << "violations:" << violations << endl;
           //until no violation
           if (violations==0) break;
         }
 
-        //Update active set
-        num_act = 0;
-        for (int j=0;j<pme;j++){
-          if ((abs(beta_me[j])>0.0||(act_vec[j]>0.0))){ //
-            act_me[j] = true;
-            num_act ++;
-          }
-          else{
-            act_me[j] = false;
-          }
-        }
-        for (int j=0;j<pcme;j++){
-          if ((abs(beta_cme[j])>0.0)||(act_vec[j+pme]>0.0)){ //
-            act_cme[j] = true;
-            num_act ++;
-          }
-          else{
-            act_cme[j] = false;
-          }
-        }
+        // //Update active set
+        // num_act = 0;
+        // for (int j=0;j<pme;j++){
+        //   if ((abs(beta_me[j])>0.0||(act_vec[j]>0.0))){ //
+        //     act_me[j] = true;
+        //     num_act ++;
+        //   }
+        //   else{
+        //     act_me[j] = false;
+        //   }
+        // }
+        // for (int j=0;j<pcme;j++){
+        //   if ((abs(beta_cme[j])>0.0)||(act_vec[j+pme]>0.0)){ //
+        //     act_cme[j] = true;
+        //     num_act ++;
+        //   }
+        //   else{
+        //     act_cme[j] = false;
+        //   }
+        // }
 
-        cout << "converge act set" << num_act << endl;
+        //cout << "converge act set" << num_act << endl;
 
       }
 
