@@ -1066,19 +1066,19 @@ bool coord_des_onerun(int pme, int pcme, int nn, NumericVector& lambda, NumericV
               // delta_cou[condind] = delta_cou[condind] * (exp(-(tau/lambda[1]) * m_cme[cmeind+1] * offset_cou ));
 
               //adaptive Update deltas and flag
-              double offset_sib = mcp(beta_me[j],lambda_adp[0],gamma)-mcp(cur_beta_me,lambda_adp[0],gamma); // new - old (for me)
-              double offset_cou = mcp(beta_me[j],lambda_adp[1],gamma)-mcp(cur_beta_me,lambda_adp[1],gamma);
-              delta_sib[j] = delta_sib[j] * (exp(-(tau/lambda_adp[0]) * m_me[j] * offset_sib ));
-              delta_cou[j] = delta_cou[j] * (exp(-(tau/lambda_adp[1]) * m_me[j] * offset_cou ));
+              double offset_sib = mcp(beta_me[j],lambda[0]*m_sib[j],gamma)-mcp(cur_beta_me,lambda[0]*m_sib[j],gamma); // new - old (for me)
+              double offset_cou = mcp(beta_me[j],lambda[1]*m_cou[j],gamma)-mcp(cur_beta_me,lambda[1]*m_cou[j],gamma);
+              delta_sib[j] = delta_sib[j] * (exp(-(tau/(lambda[0]*m_sib[j])) * m_me[j] * offset_sib ));
+              delta_cou[j] = delta_cou[j] * (exp(-(tau/(lambda[1]*m_cou[j])) * m_me[j] * offset_cou ));
 
-              offset_sib = mcp(beta_cme[cmeind],lambda_adp[0],gamma)-mcp(cur_beta_cme1,lambda_adp[0],gamma); // new - old (for .|.+)
+              offset_sib = mcp(beta_cme[cmeind],lambda[0]*m_sib[j],gamma)-mcp(cur_beta_cme1,lambda[0]*m_sib[j],gamma); // new - old (for .|.+)
               offset_cou = mcp(beta_cme[cmeind],lambda[1]*m_cou[condind],gamma)-mcp(cur_beta_cme1,lambda[1]*m_cou[condind],gamma);
-              delta_sib[j] = delta_sib[j] * (exp(-(tau/lambda_adp[0]) * m_cme[cmeind] * offset_sib ));
+              delta_sib[j] = delta_sib[j] * (exp(-(tau/(lambda[0]*m_sib[j])) * m_cme[cmeind] * offset_sib ));
               delta_cou[condind] = delta_cou[condind] * (exp(-(tau/(lambda[1]*m_cou[condind])) * m_cme[cmeind] * offset_cou ));
 
-              offset_sib = mcp(beta_cme[cmeind+1],lambda_adp[0],gamma)-mcp(cur_beta_cme2,lambda_adp[0],gamma); // new - old (for .|.-)
+              offset_sib = mcp(beta_cme[cmeind+1],lambda[0]*m_sib[j],gamma)-mcp(cur_beta_cme2,lambda[0]*m_sib[j],gamma); // new - old (for .|.-)
               offset_cou = mcp(beta_cme[cmeind+1],lambda[1]*m_cou[condind],gamma)-mcp(cur_beta_cme2,lambda[1]*m_cou[condind],gamma);
-              delta_sib[j] = delta_sib[j] * (exp(-(tau/lambda_adp[0]) * m_cme[cmeind+1] * offset_sib ));
+              delta_sib[j] = delta_sib[j] * (exp(-(tau/(lambda[0]*m_sib[j])) * m_cme[cmeind+1] * offset_sib ));
               delta_cou[condind] = delta_cou[condind] * (exp(-(tau/(lambda[1]*m_cou[condind])) * m_cme[cmeind+1] * offset_cou ));
 
               //residuals shouldn't change
@@ -1124,19 +1124,19 @@ bool coord_des_onerun(int pme, int pcme, int nn, NumericVector& lambda, NumericV
               // delta_cou[condind] = delta_cou[condind] * (exp(-(tau/lambda[1]) * m_cme[cmeind-1] * offset_cou ));
 
               //Update deltas and flag
-              double offset_sib = mcp(beta_me[j],lambda_adp[0],gamma)-mcp(cur_beta_me,lambda_adp[0],gamma); // new - old (for me)
-              double offset_cou = mcp(beta_me[j],lambda_adp[1],gamma)-mcp(cur_beta_me,lambda_adp[1],gamma);
-              delta_sib[j] = delta_sib[j] * (exp(-(tau/lambda_adp[0]) * m_me[j] * offset_sib ));
-              delta_cou[j] = delta_cou[j] * (exp(-(tau/lambda_adp[1]) * m_me[j] * offset_cou ));
+              double offset_sib = mcp(beta_me[j],lambda[0]*m_sib[j],gamma)-mcp(cur_beta_me,lambda[0]*m_sib[j],gamma); // new - old (for me)
+              double offset_cou = mcp(beta_me[j],lambda[1]*m_cou[j],gamma)-mcp(cur_beta_me,lambda[1]*m_cou[j],gamma);
+              delta_sib[j] = delta_sib[j] * (exp(-(tau/(lambda[0]*m_sib[j])) * m_me[j] * offset_sib ));
+              delta_cou[j] = delta_cou[j] * (exp(-(tau/(lambda[1]*m_cou[j])) * m_me[j] * offset_cou ));
 
-              offset_sib = mcp(beta_cme[cmeind],lambda_adp[0],gamma)-mcp(cur_beta_cme1,lambda_adp[0],gamma); // new - old (for .|.+)
+              offset_sib = mcp(beta_cme[cmeind],lambda[0]*m_sib[j],gamma)-mcp(cur_beta_cme1,lambda[0]*m_sib[j],gamma); // new - old (for .|.+)
               offset_cou = mcp(beta_cme[cmeind],lambda[1]*m_cou[condind],gamma)-mcp(cur_beta_cme1,lambda[1]*m_cou[condind],gamma);
-              delta_sib[j] = delta_sib[j] * (exp(-(tau/lambda_adp[0]) * m_cme[cmeind] * offset_sib ));
+              delta_sib[j] = delta_sib[j] * (exp(-(tau/(lambda[0]*m_sib[j])) * m_cme[cmeind] * offset_sib ));
               delta_cou[condind] = delta_cou[condind] * (exp(-(tau/(lambda[1]*m_cou[condind])) * m_cme[cmeind] * offset_cou ));
 
-              offset_sib = mcp(beta_cme[cmeind-1],lambda_adp[0],gamma)-mcp(cur_beta_cme2,lambda_adp[0],gamma); // new - old (for .|.-)
+              offset_sib = mcp(beta_cme[cmeind-1],lambda[0]*m_sib[j],gamma)-mcp(cur_beta_cme2,lambda[0]*m_sib[j],gamma); // new - old (for .|.-)
               offset_cou = mcp(beta_cme[cmeind-1],lambda[1]*m_cou[condind],gamma)-mcp(cur_beta_cme2,lambda[1]*m_cou[condind],gamma);
-              delta_sib[j] = delta_sib[j] * (exp(-(tau/lambda[1]*m_cou[condind]) * m_cme[cmeind-1] * offset_sib ));
+              delta_sib[j] = delta_sib[j] * (exp(-(tau/(lambda[0]*m_sib[j])) * m_cme[cmeind-1] * offset_sib ));
               delta_cou[condind] = delta_cou[condind] * (exp(-(tau/(lambda[1]*m_cou[condind])) * m_cme[cmeind-1] * offset_cou ));
 
               //residuals shouldn't change
@@ -1654,19 +1654,19 @@ bool coord_des_onerun_gaussian(int pme, int pcme, int nn, NumericVector& lambda,
               // delta_cou[condind] = delta_cou[condind] * (exp(-(tau/lambda[1]) * m_cme[cmeind+1] * offset_cou ));
 
               //adaptive Update deltas and flag
-              double offset_sib = mcp(beta_me[j],lambda_adp[0],gamma)-mcp(cur_beta_me,lambda_adp[0],gamma); // new - old (for me)
-              double offset_cou = mcp(beta_me[j],lambda_adp[1],gamma)-mcp(cur_beta_me,lambda_adp[1],gamma);
-              delta_sib[j] = delta_sib[j] * (exp(-(tau/lambda_adp[0]) * m_me[j] * offset_sib ));
-              delta_cou[j] = delta_cou[j] * (exp(-(tau/lambda_adp[1]) * m_me[j] * offset_cou ));
+              double offset_sib = mcp(beta_me[j],lambda[0]*m_sib[j],gamma)-mcp(cur_beta_me,lambda[0]*m_sib[j],gamma); // new - old (for me)
+              double offset_cou = mcp(beta_me[j],lambda[1]*m_cou[j],gamma)-mcp(cur_beta_me,lambda[1]*m_cou[j],gamma);
+              delta_sib[j] = delta_sib[j] * (exp(-(tau/(lambda[0]*m_sib[j])) * m_me[j] * offset_sib ));
+              delta_cou[j] = delta_cou[j] * (exp(-(tau/(lambda[1]*m_cou[j])) * m_me[j] * offset_cou ));
 
-              offset_sib = mcp(beta_cme[cmeind],lambda_adp[0],gamma)-mcp(cur_beta_cme1,lambda_adp[0],gamma); // new - old (for .|.+)
+              offset_sib = mcp(beta_cme[cmeind],lambda[0]*m_sib[j],gamma)-mcp(cur_beta_cme1,lambda[0]*m_sib[j],gamma); // new - old (for .|.+)
               offset_cou = mcp(beta_cme[cmeind],lambda[1]*m_cou[condind],gamma)-mcp(cur_beta_cme1,lambda[1]*m_cou[condind],gamma);
-              delta_sib[j] = delta_sib[j] * (exp(-(tau/lambda_adp[0]) * m_cme[cmeind] * offset_sib ));
+              delta_sib[j] = delta_sib[j] * (exp(-(tau/(lambda[0]*m_sib[j])) * m_cme[cmeind] * offset_sib ));
               delta_cou[condind] = delta_cou[condind] * (exp(-(tau/(lambda[1]*m_cou[condind])) * m_cme[cmeind] * offset_cou ));
 
-              offset_sib = mcp(beta_cme[cmeind+1],lambda_adp[0],gamma)-mcp(cur_beta_cme2,lambda_adp[0],gamma); // new - old (for .|.-)
+              offset_sib = mcp(beta_cme[cmeind+1],lambda[0]*m_sib[j],gamma)-mcp(cur_beta_cme2,lambda[0]*m_sib[j],gamma); // new - old (for .|.-)
               offset_cou = mcp(beta_cme[cmeind+1],lambda[1]*m_cou[condind],gamma)-mcp(cur_beta_cme2,lambda[1]*m_cou[condind],gamma);
-              delta_sib[j] = delta_sib[j] * (exp(-(tau/lambda[0]) * m_cme[cmeind+1] * offset_sib ));
+              delta_sib[j] = delta_sib[j] * (exp(-(tau/(lambda[0]*m_sib[j])) * m_cme[cmeind+1] * offset_sib ));
               delta_cou[condind] = delta_cou[condind] * (exp(-(tau/(lambda[1]*m_cou[condind])) * m_cme[cmeind+1] * offset_cou ));
 
               //residuals shouldn't change
@@ -1712,19 +1712,19 @@ bool coord_des_onerun_gaussian(int pme, int pcme, int nn, NumericVector& lambda,
               // delta_cou[condind] = delta_cou[condind] * (exp(-(tau/lambda[1]) * m_cme[cmeind-1] * offset_cou ));
 
               //Update deltas and flag
-              double offset_sib = mcp(beta_me[j],lambda_adp[0],gamma)-mcp(cur_beta_me,lambda_adp[0],gamma); // new - old (for me)
-              double offset_cou = mcp(beta_me[j],lambda_adp[1],gamma)-mcp(cur_beta_me,lambda_adp[1],gamma);
-              delta_sib[j] = delta_sib[j] * (exp(-(tau/lambda_adp[0]) * m_me[j] * offset_sib ));
-              delta_cou[j] = delta_cou[j] * (exp(-(tau/lambda_adp[1]) * m_me[j] * offset_cou ));
+              double offset_sib = mcp(beta_me[j],lambda[0]*m_sib[j],gamma)-mcp(cur_beta_me,lambda[0]*m_sib[j],gamma); // new - old (for me)
+              double offset_cou = mcp(beta_me[j],lambda[1]*m_cou[j],gamma)-mcp(cur_beta_me,lambda[1]*m_cou[j],gamma);
+              delta_sib[j] = delta_sib[j] * (exp(-(tau/(lambda[0]*m_sib[j])) * m_me[j] * offset_sib ));
+              delta_cou[j] = delta_cou[j] * (exp(-(tau/(lambda[1]*m_cou[j])) * m_me[j] * offset_cou ));
 
-              offset_sib = mcp(beta_cme[cmeind],lambda_adp[0],gamma)-mcp(cur_beta_cme1,lambda_adp[0],gamma); // new - old (for .|.+)
+              offset_sib = mcp(beta_cme[cmeind],lambda[0]*m_sib[j],gamma)-mcp(cur_beta_cme1,lambda[0]*m_sib[j],gamma); // new - old (for .|.+)
               offset_cou = mcp(beta_cme[cmeind],lambda[1]*m_cou[condind],gamma)-mcp(cur_beta_cme1,lambda[1]*m_cou[condind],gamma);
-              delta_sib[j] = delta_sib[j] * (exp(-(tau/lambda_adp[0]) * m_cme[cmeind] * offset_sib ));
+              delta_sib[j] = delta_sib[j] * (exp(-(tau/(lambda[0]*m_sib[j])) * m_cme[cmeind] * offset_sib ));
               delta_cou[condind] = delta_cou[condind] * (exp(-(tau/(lambda[1]*m_cou[condind])) * m_cme[cmeind] * offset_cou ));
 
-              offset_sib = mcp(beta_cme[cmeind-1],lambda_adp[0],gamma)-mcp(cur_beta_cme2,lambda_adp[0],gamma); // new - old (for .|.-)
+              offset_sib = mcp(beta_cme[cmeind-1],lambda[0]*m_sib[j],gamma)-mcp(cur_beta_cme2,lambda[0]*m_sib[j],gamma); // new - old (for .|.-)
               offset_cou = mcp(beta_cme[cmeind-1],lambda[1]*m_cou[condind],gamma)-mcp(cur_beta_cme2,lambda[1]*m_cou[condind],gamma);
-              delta_sib[j] = delta_sib[j] * (exp(-(tau/lambda_adp[0]) * m_cme[cmeind-1] * offset_sib ));
+              delta_sib[j] = delta_sib[j] * (exp(-(tau/(lambda[0]*m_sib[j])) * m_cme[cmeind-1] * offset_sib ));
               delta_cou[condind] = delta_cou[condind] * (exp(-(tau/(lambda[1]*m_cou[condind])) * m_cme[cmeind-1] * offset_cou ));
 
               //residuals shouldn't change
