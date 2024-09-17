@@ -189,11 +189,11 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("gaussian","binomial", "poiss
 
 
   #refit model based on selected variables
-  #temp<-cbind(cbind(xme,xcme)[,obj$select.idx],y)
-  #colnames(temp)<-c(obj$select.names,"y")
-  #refit <- glm(y~.,temp,family="binomial")
-  #obj$cme.refit <- refit
-  #obj$class.err.rate<-mean(ifelse(refit$fitted.values>0.5,1,0)!=y)
+  temp<-as.data.frame(cbind(cbind(xme,xcme)[,obj$select.idx],y))
+  colnames(temp)<-c(obj$select.names,"y")
+  refit <- glm(y~.,temp,family=family)
+  obj$cme.refit <- refit
+  obj$class.err.rate<-mean(ifelse(refit$fitted.values>0.5,1,0)!=y)
 
   class(obj) = "cv.glmcme"
   return(obj)
