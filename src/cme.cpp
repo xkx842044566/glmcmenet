@@ -911,13 +911,13 @@ bool coord_des_onerun(int pme, int pcme, int nn, NumericVector& lambda, NumericV
         for (int k=0;k<nn;k++){
           resid[k] -= X_me[j*nn+k]*(beta_me[j]-cur_beta);
           eta[k] += X_me[j*nn+k]*(beta_me[j]-cur_beta);
-          if (familyType == "binomial"){
-            mu = pbinomial(eta[k]) ;
-            W[k] = fmax2(mu*(1-mu),0.0001);
-          }else if(familyType == "poisson"){
-            mu = ppoisson(eta[k]) ;
-            W[k] = fmax2(mu,0.0001);
-          }
+          // if (familyType == "binomial"){
+          //   mu = pbinomial(eta[k]) ;
+          //   W[k] = fmax2(mu*(1-mu),0.0001);
+          // }else if(familyType == "poisson"){
+          //   mu = ppoisson(eta[k]) ;
+          //   W[k] = fmax2(mu,0.0001);
+          // }
           //v += (X_me[j*nn+k]*W[k]*X_me[j*nn+k])/((double)nn);
         }
         // xwx = wsqsum(X_me, W, nn, j);
@@ -994,13 +994,13 @@ bool coord_des_onerun(int pme, int pcme, int nn, NumericVector& lambda, NumericV
           for (int ll=0;ll<nn;ll++){
             resid[ll] -= X_cme[cmeind*nn+ll]*(beta_cme[cmeind]-cur_beta);
             eta[ll] += X_cme[cmeind*nn+ll]*(beta_cme[cmeind]-cur_beta);
-            if (familyType == "binomial"){
-              mu = pbinomial(eta[ll]) ;
-              W[ll] = fmax2(mu*(1-mu),0.0001);
-            }else if(familyType == "poisson"){
-              mu = ppoisson(eta[ll]) ;
-              W[ll] = fmax2(mu,0.0001);
-            }
+            // if (familyType == "binomial"){
+            //   mu = pbinomial(eta[ll]) ;
+            //   W[ll] = fmax2(mu*(1-mu),0.0001);
+            // }else if(familyType == "poisson"){
+            //   mu = ppoisson(eta[ll]) ;
+            //   W[ll] = fmax2(mu,0.0001);
+            // }
             //v += (X_me[j*nn+k]*W[k]*X_me[j*nn+k])/((double)nn);
           }
 
