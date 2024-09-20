@@ -1,7 +1,7 @@
 cv.glmcmenet <- function (xme, xcme, y, family = c("gaussian","binomial", "poisson"), nfolds = 10, var.names = NULL, nlambda.sib = 20,
                           nlambda.cou = 20, lambda.min.ratio = 1e-06, ngamma = 20,
                           max.gamma = 150, ntau = 20, max.tau = 0.2, tau.min.ratio = 0.001,
-                          it.max = 250, it.max.cv = 25, type.measure=c("deviance","class","adaptive_dev"),
+                          it.max = 250, it.max.cv = 25, type.measure=c("deviance","class","bic"),
                           warm.str = c("lasso","adaptive_lasso","elastic","ncvreg","NULL"),
                           penalty.factor=rep(1,ncol(xme) + ncol(xcme)), group.penalty=rep(1,2*ncol(xme)),
                           screen_ind=F)
@@ -116,7 +116,7 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("gaussian","binomial", "poiss
                         max.lambda = max.lambda, it.max = it.max.cv, screen_ind=F)
     xtest <- xmat[which, , drop = F]
     yhat <- predictcme(fitobj, xtest, type="response")
-    predmat[which, , ] <- loss(fitobj,y[which],yhat,family=family,type.measure=type.measure)
+    predmat[which, , ] <- loss(fitobj,y[which],yhat,n=n,family=family,type.measure=type.measure)
 
   }
   cat("\n")
@@ -153,7 +153,7 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("gaussian","binomial", "poiss
                         max.lambda = max.lambda, it.max = it.max.cv, screen_ind=screen_ind)
     xtest <- xmat[which, , drop = F]
     yhat <- predictcme(fitobj, xtest, type="response")
-    predmat[which, , ] <- loss(fitobj,y[which],yhat,family=family,type.measure=type.measure)
+    predmat[which, , ] <- loss(fitobj,y[which],yhat,n=n,family=family,type.measure=type.measure)
   }
   cat("\n")
   cvm.lambda <- apply(predmat, c(2, 3), mean)
@@ -193,7 +193,7 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("gaussian","binomial", "poiss
   colnames(temp)<-c(obj$select.names,"y")
   refit <- glm(y~.,temp,family=family)
   obj$cme.refit <- refit
-  obj$class.err.rate<-mean(ifelse(refit$fitted.values>0.5,1,0)!=y)
+  #obj$class.err.rate<-mean(ifelse(refit$fitted.values>0.5,1,0)!=y)
 
   class(obj) = "cv.glmcme"
   return(obj)
