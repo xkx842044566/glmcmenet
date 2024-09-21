@@ -229,26 +229,26 @@ double s_me(double inprod, double v, NumericVector& lambda, double gamma, Numeri
     sgn = 1.0;
   }
 
-  if (abs(inprod) < (lambda_r[0]*gamma + delta_r[1]*(1-lambda_r[0]/lambda_r[1]))  ){
+  if (abs(inprod) < (v*lambda_r[0]*gamma + delta_r[1]*(1-lambda_r[0]/lambda_r[1]))  ){
     if (abs(inprod) >= (delta_r[0]+delta_r[1]) ){
-      ret = ( abs(inprod)-(delta_r[0]+delta_r[1]) ) / (1 - 1.0/gamma*(ratio[0]+ratio[1]));
+      ret = ( abs(inprod)-(delta_r[0]+delta_r[1]) ) / (v - 1.0/gamma*(ratio[0]+ratio[1]));
     }
     else{
       ret = 0.0;
     }
   }
-  else if (abs(inprod) < lambda_r[1]*gamma){
+  else if (abs(inprod) < v*lambda_r[1]*gamma){
     if (abs(inprod) > (delta_r[1])){
-      ret = ( abs(inprod)-(delta_r[1]) ) / (1 - 1.0/gamma*(ratio[1]) );
+      ret = ( abs(inprod)-(delta_r[1]) ) / (v - 1.0/gamma*(ratio[1]) );
     }
     else{
       ret = 0.0;
     }
   }
   else{
-    ret = abs(inprod);
+    ret = abs(inprod)/v;
   }
-  ret=ret/v;
+  ret=ret;
   return (sgn*ret);
 
 }
