@@ -2,7 +2,7 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("gaussian","binomial", "poiss
                           nlambda.cou = 20, lambda.min.ratio = 1e-06, ngamma = 20,
                           max.gamma = 150, ntau = 20, max.tau = 0.2, tau.min.ratio = 0.001,
                           it.max = 250, it.max.cv = 25, type.measure=c("deviance","class","bic"),
-                          warm.str = c("lasso","adaptive_lasso","elastic","ncvreg","NULL"),
+                          warm.str = c("lasso","adaptive_lasso","elastic","ncvreg","NULL"), elastic_alpha = NULL,
                           penalty.factor=rep(1,ncol(xme) + ncol(xcme)), group.penalty=rep(1,2*ncol(xme)),
                           screen_ind=F)
 {
@@ -42,7 +42,7 @@ cv.glmcmenet <- function (xme, xcme, y, family = c("gaussian","binomial", "poiss
     #                     tuneLength = 25,
     #                     trControl = control))
     #fitela <- glmnet(cbind(xme,xcme),y, family=family, alpha=cvela$bestTune$alpha,lambda = cvela$bestTune$lambda)#cv.elastic$finalModel
-    cv.ela <- cv.glmnet(cbind(xme,xcme),y, family=family, alpha=0.25,type.measure="deviance")#cv.elastic$finalModel
+    cv.ela <- cv.glmnet(cbind(xme,xcme),y, family=family, alpha=elastic_alpha, type.measure="deviance")#cv.elastic$finalModel
     fitela <- cv.ela$glmnet.fit
     elaind <- which(fitela$beta[,which(cv.ela$lambda==cv.ela$lambda.min)]!=0) #fitela$beta@i+1
     act.vec[elaind] <- 1
