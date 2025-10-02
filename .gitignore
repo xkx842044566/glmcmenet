@@ -1,4 +1,15 @@
-.Rproj.user
 .Rhistory
 .RData
 .Ruserdata
+# macOS
+.DS_Store
+**/.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+
+.Rhistory
+.RData
+.Ruserdata
+.Rproj.user/
+.Rcheck/
