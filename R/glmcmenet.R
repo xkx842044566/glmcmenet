@@ -1,3 +1,118 @@
+#' Fit a CME-regularized generalized linear model
+#'
+#' @description
+#' Fits a generalized linear model with **Conditional Main-Effect (CME)** regularization.
+#' Inputs for main effects (`xme`) and CME effects (`xcme`) are internally centered
+#' and scaled (with constant columns handled safely), penalties are applied to
+#' sibling and cousin groups, and solutions are returned over a 2D tuning grid
+#' of (\eqn{\gamma},\eqn{\tau}) or (\eqn{\lambda_{\mathrm{sib}}}, and \eqn{\lambda_{\mathrm{cou}}}).
+#'
+#' @param xme Numeric matrix (n × p_me) of main-effect columns.
+#' @param xcme Numeric matrix (n × p_cme) of CME columns.
+#' @param y Numeric response vector of length \code{n}.
+#' @param family Character; one of \code{"gaussian"}, \code{"binomial"}, or \code{"poisson"}.
+#' @param lambda.sib Decreasing numeric vector of sibling penalties
+#'   (default: exponential grid from \code{max.lambda} to \code{max.lambda*1e-6}).
+#' @param lambda.cou Decreasing numeric vector of cousin penalties
+#'   (default: exponential grid from \code{max.lambda} to \code{max.lambda*1e-6}).
+#' @param max.lambda Numeric; maximum joint penalty used to initialize the grids.
+#'   By default computed as \code{lambda0.cme(cbind(xme, xcme), y)}.
+#' @param gamma Numeric; MCP non-convexity parameter (default \eqn{1/(0.125-\tau)+0.001}).
+#' @param tau Numeric; exponential decay parameter for adaptive linearized penalties (default \code{0.01}).
+#' @param act.vec Numeric vector of length \code{ncol(xme)+ncol(xcme)} indicating warm-start activity
+#'   (1 = active, 0 = inactive). Default: all ones.
+#' @param beta0 Numeric vector of initial coefficients (same length as \code{act.vec}). Default: zeros.
+#' @param penalty.factor Numeric vector of per-coefficient weights (same length as \code{act.vec});
+#'   used to modulate penalties. Default: all ones.
+#' @param group.penalty Numeric vector of length \code{2*ncol(xme)} giving group weights
+#'   for siblings and cousins (ordered as \code{c(m_sib, m_cou)}). Default: all ones.
+#' @param it.max Integer; maximum number of coordinate-descent iterations per warm cycle (default \code{250}).
+#' @param screen_ind Logical; enable strong-rule style screening (default \code{FALSE}).
+#'
+#' @details
+#' Columns of \code{xme} and \code{xcme} are internally standardized via \code{scale()},
+#' with constant columns set to zero design entries and unit scale to avoid division by zero.
+#' For \code{family = "gaussian"}, the intercept is computed after fitting as
+#' \eqn{\bar{y} - \bar{X}\hat\beta}, stored in \code{$intercept}. For
+#' \code{binomial} and \code{poisson}, the intercept and deviance are computed inside the solver.
+#'
+#' @return
+#' An object of class \code{"glmcme"} (a list) containing at least:
+#' \itemize{
+#'   \item \code{coefficients} — 3D array \code{(p_me + p_cme) × length(lambda.sib) × length(lambda.cou)}.
+#'   \item \code{intercept} — matrix of intercepts over the tuning grid
+#'         (always present; for Gaussian it is computed post-hoc).
+#'   \item \code{residuals} — array of working residuals over the grid.
+#'   \item \code{deviation} — deviance matrix (only for \code{binomial}/\code{poisson}).
+#'   \item \code{nzero} — matrix of non-zero counts.
+#'   \item \code{lambda_sib}, \code{lambda_cou} — the penalty grids used.
+#'   \item \code{act} — logical array indicating active set over the grid.
+#'   \item \code{gamma}, \code{tau} — the final tuning values used (scalars).
+#'   \item \code{xme}, \code{xcme}, \code{y}, \code{family} — inputs echoed for convenience.
+#' }
+#'
+#' @section Notes:
+#' If \code{length(gamma) > 1}, the routine treats \code{gamma} and \code{tau} as a tuning grid
+#' (no \eqn{\lambda} iteration). Otherwise it iterates over \code{lambda.sib} × \code{lambda.cou}.
+#'
+#' @references
+#' Mak, S., & Wu, C. J. (2019). cmenet: A new method for bi-level variable selection
+#' of conditional main effects. *Journal of the American Statistical Association*, 114(526), 844-856.
+#'
+#' @examples
+#' \dontrun{
+#' library(MASS)
+#' n <- 50 #number of observations
+#' p <- 20 #number of main effects
+
+## Simulate model matrix for MEs and CMEs
+#' set.seed(1)
+#' rho <- 0 #correlation
+#' ones <- matrix(1,p,p)
+#' covmtx <- rho*ones+(1-rho)*diag(p)
+#' latmtx <- mvrnorm(n,p,mu=rep(0,p),Sigma=covmtx) #equicorrelated cov. matrix
+#' memtx <- (latmtx>=0)-(latmtx<0) #simulate model matrix for MEs
+#' model.mtx <- full.model.mtx(memtx)$model.mtx #generate model matrix for MEs and CMEs
+#' glist <- grouplist(model.mtx)
+#' ## Set true model and generate response
+#' num.act <- 2 # two siblings active
+#' num.grp <- 4 # ... within four active groups
+#' ind <- c()
+#' for (ii in 1:num.grp){
+#'  eff <- sample(seq(2*(p-1)),num.act)
+#'  ind <- c(ind, p + eff + (ii-1)*(2*(p-1)))
+#'}
+#' colnames(model.mtx)[ind] # active CMEs
+
+#' des.mtx <- model.mtx[,ind]
+#' inter <- 0 #intercept
+#' betatrue <- rep(1, length(ind))
+#' xb <- inter + des.mtx %*% betatrue
+#' y  <- rbinom(nrow(des.mtx), 1, 1 / (1 + exp(-xb)))
+
+#' xme <- model.mtx[,1:p]
+#' xcme <- model.mtx[,(p+1):ncol(model.mtx)]
+#'
+#' # weights from ridge fit (recompute with current y)
+#' cv.ridge <- glmnet::cv.glmnet(cbind(xme, xcme), y, family = "binomial", alpha = 0, standardize = FALSE)
+#' coefs <- as.numeric(coef(cv.ridge, s = cv.ridge$lambda.min))[-1]
+#' w  <- 1 / (abs(coefs) + 1 / n)       # element-wise
+#' w[!is.finite(w)] <- 9.999e8
+#' mg <- sapply(glist, function(idx) 1 / (sum(abs(coefs[idx])) + 1 / n))
+#' mg[!is.finite(mg)] <- 9.999e8
+
+#' fit <- glmcmenet(
+#'   xme, xcme, y, family = "binomial",
+#'   penalty.factor = w, group.penalty = mg
+#' )
+#' str(fit$coefficients)
+#' }
+#'
+#' @seealso \code{\link{cv.glmcmenet}}, \code{\link{predictcme}}}
+#' @importFrom stats glm coef
+#' @export
+
+
 glmcmenet <- function (xme, xcme, y, family=c("gaussian","binomial", "poisson"),
                        lambda.sib = exp(seq(from = log(max.lambda),to = log(max.lambda * 1e-06), length = 10)),
                        lambda.cou = exp(seq(from = log(max.lambda),to = log(max.lambda * 1e-06), length = 10)),
@@ -39,7 +154,6 @@ glmcmenet <- function (xme, xcme, y, family=c("gaussian","binomial", "poisson"),
     if (lambda.flg){
       inter <- matrix(NA,nrow=length(lambda.sib),ncol=length(lambda.cou))
     }else{
-      # inter <- matrix(NA,nrow=length(gamma),ncol=length(tau)) #ch
       inter <- matrix(NA,nrow=length(tau),ncol=length(gamma))
     }
     xmat <- cbind(xme,xcme)
@@ -58,20 +172,7 @@ glmcmenet <- function (xme, xcme, y, family=c("gaussian","binomial", "poisson"),
                it_warm=3, reset=1, screen_ind)
   }
 
-  # if (lambda.flg) {
-  #   inter <- matrix(NA, nrow = length(lambda.sib), ncol = length(lambda.cou))
-  # }
-  # else {
-  #   inter <- matrix(NA, nrow = length(tau), ncol = length(gamma))
-  # }
-  # xmat <- cbind(xme, xcme)
-  # for (a in 1:nrow(inter)) {
-  #   for (b in 1:ncol(inter)) {
-  #     inter[a, b] <- log(mean(y)/(1-mean(y)))-xmat %*% ret$coefficients[, a, b]
-  #       ## mean(y - xmat %*% ret$coefficients[, a, b])
-  #   }
-  # }
-  # ret$inter <- inter
+
   ret$xme <- xme
   ret$xcme <- xcme
   ret$y <- y

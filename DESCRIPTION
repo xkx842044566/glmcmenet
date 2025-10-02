@@ -4,11 +4,13 @@ Title: Bi-Level Selection of Conditional Main Effects for Generalized Linear Reg
 Version: 0.1.0
 Author: Kexin Xie
 Maintainer: Kexin Xie <kexinx@vt.edu>
-Description: Provides functions for implementing cmenet - a bi-level variable selection method for conditional main effects for generalized linear regression. CMEs are reparametrized interaction effects which capture the conditional impact of a factor at a fixed level of another factor. Compared to traditional two-factor interactions, CMEs can quantify more interpretable interaction effects in many problems. The current implementation performs variable selection on only binary CMEs; we are working on an extension for the continuous setting.
+Description: Provides functions for implementing glmcmenet - a bi-level variable selection method for conditional main effects for generalized linear regression. CMEs are reparametrized interaction effects which capture the conditional impact of a factor at a fixed level of another factor. Compared to traditional two-factor interactions, CMEs can quantify more interpretable interaction effects in many problems. The current implementation performs variable selection on only binary CMEs; we are working on an extension for the continuous setting.
 License: GPL (>= 2)
 Encoding: UTF-8
 LazyData: FALSE
 Imports: Rcpp (>= 0.12.4), MASS, Matrix, caret, ncvreg, glmnet, hierNet, sparsenet
+Suggests: testthat (>= 3.0.0)
 LinkingTo: Rcpp, RcppArmadillo
-RoxygenNote: 6.1.1
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
 NeedsCompilation: yes

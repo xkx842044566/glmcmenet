@@ -1,3 +1,25 @@
+#' Starting values and lambda_max for the GLM path
+#'
+#' @description
+#' Computes initial mean vector and the maximum penalty (`lambda_max`) used to
+#' start regularization paths for Gaussian, Binomial, or Poisson models.
+#'
+#' @param x Numeric matrix (n x p) design matrix.
+#' @param y Numeric response vector of length n (0/1 for binomial).
+#' @param family Character string: "gaussian", "binomial", or "poisson".
+#' @param intercept Logical; currently ignored.
+#'
+#' @return A list with:
+#' \describe{
+#'   \item{mu}{Length-n vector with all entries equal to `mean(y)`.}
+#'   \item{lambda_max}{Scalar giving the maximal penalty.}
+#' }
+#'
+#' @keywords internal
+#' @noRd
+
+
+
 get_start <- function(x, y, family, intercept) {
   nobs <- nrow(x); nvars <- ncol(x)
 
