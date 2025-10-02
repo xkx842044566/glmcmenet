@@ -1,6 +1,6 @@
 Package: glmcmenet
 Type: Package
-Title: Bi-Level Selection of Conditional Main Effects for Generalized Linear Regression
+Title: Adaptive Bi-Level Variable Selection of Conditional Main Effects for Generalized Linear Models
 Version: 0.1.0
 Author: Kexin Xie
 Maintainer: Kexin Xie <kexinx@vt.edu>
