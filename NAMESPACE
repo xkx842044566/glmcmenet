@@ -7,6 +7,6 @@ import(hierNet)
 import(sparsenet)
 importFrom("caret","trainControl","train")
 importFrom("stats", "median", "coef")
-importFrom("Rcpp", "evalCpp"),
+importFrom("Rcpp", "evalCpp")
 importFrom("utils", "setTxtProgressBar", "txtProgressBar")
 useDynLib(glmcmenet, .registration = TRUE)
