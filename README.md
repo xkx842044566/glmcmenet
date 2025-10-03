@@ -22,6 +22,12 @@ This repository contains the code for the method used in the paper:
 ## Installation:
 * the latest version: `devtools::install_github("xkx842044566/glmcmenet")`
 
+## Reproducibility / Simulation Code
+
+A companion repository with ready-to-run scripts that reproduce the paper’s simulation results is available here:
+
+* [glmcmenet-simulation](https://github.com/xkx842044566/glmcmenet-simulation)**
+
 ## Report bugs：
 * open an [issue](https://github.com/xkx842044566/glmcmenet/issues) or send an email to Kexin Xie at <kexinx@vt.edu>
 
