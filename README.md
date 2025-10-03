@@ -26,7 +26,7 @@ This repository contains the code for the method used in the paper:
 
 A companion repository with ready-to-run scripts that reproduce the paper’s simulation results is available here:
 
-* [glmcmenet-simulation](https://github.com/xkx842044566/glmcmenet-simulation)**
+* [glmcmenet-simulation](https://github.com/xkx842044566/glmcmenet-simulations) *
 
 ## Report bugs：
 * open an [issue](https://github.com/xkx842044566/glmcmenet/issues) or send an email to Kexin Xie at <kexinx@vt.edu>
